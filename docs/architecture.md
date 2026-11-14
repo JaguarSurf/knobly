@@ -17,6 +17,7 @@ flowchart TD
         AA[":app:android"]
         IA["iosApp"]
         AD[":app:desktop<br/>dev harness only"]
+        AS[":app:shared<br/>root UI, navigation, DI"]
     end
 
     subgraph Features
@@ -46,11 +47,10 @@ flowchart TD
         PF[":platform:fake<br/>fake adapters"]
     end
 
-    AA --> FC & FH & FS & FSet & FO
-    IA --> FC & FH & FS & FSet & FO
+    AA & IA & AD --> AS
+    AS --> FC & FH & FS & FSet & FO
     AA --> PA
-    IA --> PI
-    AD --> FC & FH & FS & FSet & FO
+    AS -. iOS only .-> PI
     AD --> PF
 
     FC & FH & FSet & FO --> DR
@@ -80,11 +80,14 @@ flowchart TD
 | `:feature:history` | List of filtered events |
 | `:feature:stats` | Charts and dashboards |
 | `:feature:settings` | General settings, backup, import/export |
-| `:feature:onboarding` | Request roles/permissions; on iOS, guide the user to the native features |
+| `:feature:onboarding` | Call filtering setup: the "Call filtering is off" card (shown in the Filters tab by `:app:shared`) that requests the call screening role; on iOS, guides the user to the native features |
 | `:platform:android-screening` | `CallScreeningService` + block notifications |
 | `:platform:ios-calldirectory` | Exports compatible rules as a list to the extension via App Group |
 | `:platform:fake` | Fake adapters of the platform ports (contacts, role, incoming calls) for the desktop harness and tests |
+| `:app:shared` | Root composable (`App`), bottom navigation, Koin graph; the iOS framework (`Shared`) consumed by `iosApp` |
+| `:app:android` | Android application: `Application` (Koin), `MainActivity`, manifest, release signing |
 | `:app:desktop` | Dev-only JVM app: runs the shared UI with fakes and an incoming call simulator |
+| `iosApp` | Xcode project (SwiftUI shell hosting the shared Compose UI) |
 
 ## Targets
 
@@ -95,25 +98,26 @@ Shared modules (`:core:*`, `:domain:*`, `:feature:*`, `:platform:fake`) target *
 Platform capabilities are accessed only through interfaces (ports) defined in the domain, so features, the engine and the UI can run anywhere:
 
 ```kotlin
-interface ContactsSource {
-    suspend fun isContact(number: PhoneNumber): Boolean
-}
-
+// Implemented (domain/rules, package app.knobly.domain.port)
 interface ScreeningRoleController {
+    val isRoleAvailable: Boolean
     val isRoleHeld: StateFlow<Boolean>
     suspend fun requestRole(): Boolean
 }
 
-interface IncomingCallSource {
-    val calls: Flow<IncomingCall>
+// Planned, together with the "contacts only" rule
+interface ContactsSource {
+    suspend fun isContact(number: PhoneNumber): Boolean
 }
 ```
 
 | Port | Android | iOS | Desktop / tests |
 |---|---|---|---|
-| `ContactsSource` | `ContactsContract` (`:platform:android-screening`) | Contacts framework (contacts already win on iOS) | In-memory fake |
-| `ScreeningRoleController` | `RoleManager.ROLE_CALL_SCREENING` | Guide to enable the extension in Settings | Fake with a toggle |
-| `IncomingCallSource` | `CallScreeningService` | — (no per-call callback) | Incoming call simulator |
+| `ScreeningRoleController` | `AndroidScreeningRoleController` (`RoleManager.ROLE_CALL_SCREENING`) | `IosScreeningRoleController` (no role; guide to Settings) | `FakeScreeningRoleController` (toggle) |
+| `PhoneNumberNormalizer` (`:core:phone`) | `LibPhoneNumberNormalizer` | PhoneNumberKit (planned, from Swift) | `LibPhoneNumberNormalizer` |
+| `ContactsSource` (planned) | `ContactsContract` | Contacts framework (contacts already win on iOS) | In-memory fake |
+
+Incoming calls are not a port: on Android the `CallScreeningService` calls the rule engine directly (it must answer within seconds), and the desktop harness's incoming call simulator does the same with the same engine and normalizer. iOS has no per-call callback.
 
 Koin modules per app wire the real adapters (`:app:android`, `iosApp`) or the fakes (`:app:desktop`, tests). `:feature:*` modules never call platform APIs directly.
 
@@ -198,7 +202,7 @@ Layers from fastest to slowest feedback (see [ADR-0005](adr/0005-desktop-harness
 
 **Android**
 - The system wakes up the `CallScreeningService` on every call: **no foreground service** and no battery optimization exemption.
-- Requires the `ROLE_CALL_SCREENING` role (API 29+), requested during onboarding via `RoleManager`.
+- Requires the `ROLE_CALL_SCREENING` role (API 29+), requested from the "Enable call filtering" card in the Filters tab via `RoleManager`. It does not replace the default dialer: the system phone app keeps handling calls.
 - WorkManager for maintenance: pruning old history and pre-aggregation.
 
 **iOS**

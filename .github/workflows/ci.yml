@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android + JVM (build, tests, lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Tests, Detekt, ktlint and Android lint
+        run: ./gradlew check --continue
+
+      - name: Build debug APK
+        run: ./gradlew :app:android:assembleDebug
+
+      - name: Verify the APK does not request the INTERNET permission
+        run: |
+          AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort -V | tail -n 1)
+          APK=app/android/build/outputs/apk/debug/knobly-debug.apk
+          "$AAPT2" dump permissions "$APK"
+          if "$AAPT2" dump permissions "$APK" | grep -q "android.permission.INTERNET"; then
+            echo "::error::The APK requests android.permission.INTERNET (see docs/adr/0003-offline-first-no-internet.md)"
+            exit 1
+          fi
+
+      - name: Record UI screenshots (Roborazzi)
+        run: ./gradlew :app:shared:recordRoborazziJvm
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: knobly-debug-apk
+          path: app/android/build/outputs/apk/debug/knobly-debug.apk
+          if-no-files-found: error
+
+      - name: Upload UI screenshots
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-screenshots
+          path: app/shared/build/outputs/roborazzi/
+          if-no-files-found: warn
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports-android
+          path: |
+            **/build/reports/
+            **/build/test-results/
+
+  ios:
+    name: iOS (framework, tests, simulator app)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Shared tests on the iOS simulator
+        run: ./gradlew iosSimulatorArm64Test --continue
+
+      - name: Build the shared framework for the simulator
+        run: ./gradlew :app:shared:linkDebugFrameworkIosSimulatorArm64
+
+      - name: Build the iOS app for the simulator
+        run: |
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -target iosApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=YES \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports-ios
+          path: |
+            **/build/reports/
+            **/build/test-results/

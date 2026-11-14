@@ -1,0 +1,23 @@
+# Overrides on top of Detekt's default configuration (buildUponDefaultConfig = true).
+
+naming:
+  FunctionNaming:
+    # Composable functions are PascalCase by convention.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][A-Za-z0-9_]*'
+
+complexity:
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    ignoreDefaultParameters: true
+    ignoreAnnotated: ['Composable']
+
+style:
+  MagicNumber:
+    # Layout values (dp, sp, colors) in Compose code are not magic numbers.
+    ignoreAnnotated: ['Composable', 'Preview']
+    ignorePropertyDeclaration: true
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']

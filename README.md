@@ -24,13 +24,14 @@ Android gets the full feature set (Android 10+). iOS only allows static block li
 
 ## Status
 
-Early stage: **planning / technical spike**. See the [roadmap](docs/roadmap.md).
+Early stage: **technical spike**. See the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
 - [Android vs iOS](docs/platforms.md)
 - [Roadmap](docs/roadmap.md)
+- [Development guide](docs/development.md): build, run without a phone, install on a phone
 - [Architecture Decision Records](docs/adr/)
 
 ## License

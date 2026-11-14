@@ -68,8 +68,39 @@ Use the cheapest layer that covers the change (details in [ADR-0005](docs/adr/00
 
 ## Commands
 
-> To be defined once the KMP project is created (build, tests, lint, run on a device).
+Always use the Gradle wrapper. Full guide: [development.md](docs/development.md).
+
+```bash
+# Build
+./gradlew :app:android:assembleDebug        # -> app/android/build/outputs/apk/debug/knobly-debug.apk
+./gradlew :app:android:assembleRelease      # R8; signed only with keystore.properties / KNOBLY_* env vars
+
+# Tests and quality (run before handing work back)
+./gradlew check                             # JVM + Android host tests, UI tests, Detekt, ktlint, Android lint
+./gradlew ktlintFormat                      # fix formatting
+./gradlew :app:shared:recordRoborazziJvm    # screenshots -> app/shared/build/outputs/roborazzi/*.png (open them to review UI)
+
+# Run without a phone
+./gradlew :app:desktop:run                  # desktop harness (X11) with the incoming call simulator
+./gradlew :app:desktop:hotRunJvm            # same, with Compose Hot Reload
+scripts/emulator.sh                         # Android emulator (KVM), then: adb emu gsm call 03031234567
+
+# Install on a phone (wireless debugging, see docs/development.md)
+adb pair <ip>:<pairing-port> && adb connect <ip>:<port>
+adb install -r app/android/build/outputs/apk/debug/knobly-debug.apk
+adb logcat -s KnoblyScreening               # screening decisions and timing
+
+# iOS (macOS only)
+./gradlew iosSimulatorArm64Test
+./gradlew :app:shared:linkDebugFrameworkIosSimulatorArm64
+```
+
+Notes for agents:
+
+- Verify with the APK permissions (`aapt2 dump permissions <apk>`) that `android.permission.INTERNET` is never requested.
+- Desktop/JVM UI tests need a test `Dispatchers.Main` (see `app/shared/src/jvmTest/.../TestHarness.kt`).
+- Kotlin/Native (iOS) test names cannot contain `,` `.` `:` and similar characters, even in backticks.
 
 ## Current status
 
-Phase: **planning / technical spike**. See [roadmap.md](docs/roadmap.md).
+Phase: **technical spike**. The KMP skeleton builds an installable APK with the three tabs, an "Enable call filtering" card for `ROLE_CALL_SCREENING` in the Filters tab (no first-run screen) and a minimal `CallScreeningService` running hard-coded spike rules (`SpikeRules`). See [roadmap.md](docs/roadmap.md).
