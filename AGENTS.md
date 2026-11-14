@@ -87,6 +87,7 @@ Always use the Gradle wrapper. Full guide: [development.md](docs/development.md)
 ./gradlew :app:android:assembleRelease      # R8; signed only with keystore.properties / KNOBLY_* env vars
 
 # Tests and quality (run before handing work back)
+./gradlew build                             # check + assemble every module (also compiles shared code alone)
 ./gradlew check                             # JVM + Android host tests, UI tests, Detekt, ktlint, Android lint
 ./gradlew ktlintFormat                      # fix formatting
 ./gradlew :app:shared:recordRoborazziJvm    # screenshots -> app/shared/build/outputs/roborazzi/*.png (open them to review UI)

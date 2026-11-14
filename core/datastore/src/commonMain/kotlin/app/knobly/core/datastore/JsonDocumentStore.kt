@@ -14,6 +14,12 @@ import okio.BufferedSource
 import okio.FileSystem
 import okio.Path.Companion.toPath
 
+/**
+ * okio's `FileSystem.SYSTEM`. It exists on every Knobly target, but not in okio's common API (okio also targets
+ * browsers), so shared code reaches it through `expect`/`actual`.
+ */
+internal expect val systemFileSystem: FileSystem
+
 private val documentJson =
     Json {
         ignoreUnknownKeys = true
@@ -36,7 +42,7 @@ fun <T> createJsonDocumentStore(
         DataStoreFactory.create(
             storage =
                 OkioStorage(
-                    fileSystem = FileSystem.SYSTEM,
+                    fileSystem = systemFileSystem,
                     serializer = JsonOkioSerializer(serializer, default),
                     producePath = { path.toPath() },
                 ),

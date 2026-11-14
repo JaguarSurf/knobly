@@ -20,7 +20,7 @@ Host requirements:
 - **Docker** with a few GB free in its storage for the image (~4 GB).
 - **Disk space in the project folder** for the tool data (see below): plan for **at least 10 GB**.
 - **Linux host with X11** for the desktop harness. `initializeCommand` runs `xhost +local:` on the host.
-- **KVM** (`/dev/kvm`) for the emulator. `init.sh` detects it on the host and generates `.devcontainer/docker-compose.kvm.yaml`.
+- **KVM** (`/dev/kvm`) for the emulator. `init.sh` detects it on the host and adds it to the generated `.devcontainer/docker-compose.devices.yaml`.
 - **iOS builds need macOS + Xcode** (see [iOS](#ios-on-a-mac)). They cannot run in the devcontainer.
 
 The project follows the standard Gradle layout: each module's build outputs go to its own `build/` folder (git-ignored), e.g. `app/android/build/outputs/apk/`.
@@ -48,7 +48,7 @@ Without the NVIDIA Container Toolkit, an NVIDIA host falls back to software rend
 
 ### VS Code
 
-The devcontainer installs extensions for Kotlin (`fwcd.kotlin`, basic support), Gradle, XML, Mermaid and EditorConfig. Kotlin support in VS Code is limited; IntelliJ IDEA or Android Studio on the host work with the same repository.
+The devcontainer installs extensions for Kotlin (`fwcd.kotlin`, basic support), Gradle, XML, Mermaid, EditorConfig, shell, Python, Docker and TOML, among others. Kotlin support in VS Code is limited; IntelliJ IDEA or Android Studio on the host work with the same repository.
 
 ## Project layout
 
@@ -57,7 +57,7 @@ app/android      Android application (APK)
 app/desktop      Desktop harness, development only
 app/shared       Root UI, navigation, Koin graph, iOS framework "Shared"
 feature/*        Screens (calls, history, stats, settings, onboarding)
-domain/*         Rule engine and ports (rules), statistics (stats)
+domain/*         Rule engine and ports (rules), call history (history), statistics (stats)
 core/*           Model, phone numbers, database, datastore, design system
 platform/*       Platform adapters: android-screening, ios-calldirectory, fake
 iosApp           Xcode project
@@ -73,9 +73,20 @@ See [architecture.md](architecture.md) for the dependency rules.
 |---|---|---|
 | Debug APK | `./gradlew :app:android:assembleDebug` | `app/android/build/outputs/apk/debug/knobly-debug.apk` |
 | Release APK | `./gradlew :app:android:assembleRelease` | `app/android/build/outputs/apk/release/knobly-release.apk` (`knobly-release-unsigned.apk` without signing credentials) |
-| Everything + checks | `./gradlew build` | |
+| Release bundle (Google Play) | `./gradlew :app:android:bundleRelease` | `app/android/build/outputs/bundle/release/knobly-release.aab` (signed with the same credentials) |
+| Everything + checks | `./gradlew build` | All modules and variants, plus everything in `check`. Run it before handing work back: it also compiles the shared (`commonMain`) code on its own, which `check` and the APK tasks do not |
 
-The debug APK is large (~35 MB) because it is not shrunk; the release APK goes through R8 (~2 MB).
+Sizes: the debug APK is ~44 MB (not shrunk). The release APK goes through R8 and is ~9 MB, about half of it the bundled SQLite library for four CPU architectures; from an AAB, Google Play delivers only the one the phone needs.
+
+The release build must be tested on a device too (R8 can break code that only reflection reaches): install it, turn on a filter and check that calls are rejected and appear in History and Statistics. A phone with the debug build must uninstall it first (different signing keys, see below).
+
+### Version numbers
+
+- `versionCode` = the number of commits on `HEAD` (`git rev-list --count HEAD`), so every APK built after a new commit installs as an update. Override it with `-Pknobly.versionCode=<n>`.
+- Without the git history (no git, shallow clone), debug builds use `1` with a warning and release builds fail.
+- `versionName` is set by hand in `app/android/build.gradle.kts` (`0.1.0`); debug builds show the build number too: `0.1.0-debug (42)`.
+
+See [ADR-0007](adr/0007-app-updates-and-data-compatibility.md).
 
 ### Release signing
 
@@ -83,12 +94,12 @@ Signing credentials are never committed. Provide them in **one** of these ways:
 
 1. `keystore.properties` at the repository root (git-ignored):
 
-   ```properties
-   storeFile=/workspace/.local/knobly-release.jks
-   storePassword=...
-   keyAlias=knobly
-   keyPassword=...
-   ```
+```properties
+storeFile=/workspace/.local/knobly-release.jks
+storePassword=...
+keyAlias=knobly
+keyPassword=...
+```
 
 2. Environment variables (e.g. CI secrets): `KNOBLY_KEYSTORE_FILE`, `KNOBLY_KEYSTORE_PASSWORD`, `KNOBLY_KEY_ALIAS`, `KNOBLY_KEY_PASSWORD`.
 
@@ -99,7 +110,13 @@ keytool -genkeypair -keystore /workspace/.local/knobly-release.jks -alias knobly
   -keyalg RSA -keysize 4096 -validity 10000
 ```
 
-`.local/` is git-ignored. Back the keystore up outside the repository.
+`.local/` is git-ignored. Back the keystore up outside the repository, in at least two places (see [ADR-0007](adr/0007-app-updates-and-data-compatibility.md)): it is the only key that can sign updates.
+
+Check which key signed an APK:
+
+```bash
+$ANDROID_HOME/build-tools/37.0.0/apksigner verify --print-certs app/android/build/outputs/apk/release/knobly-release.apk
+```
 
 ## Run without a phone
 
@@ -116,7 +133,7 @@ The window shows the app at phone width plus **Dev tools**:
 - a switch to grant/revoke the (fake) contacts permission; the only fake contact is (11) 91234-5678;
 - an **incoming call simulator**: type a number (e.g. `0303 123 4567`) or press *Hidden*. The call goes through the real normalizer, `CallScreener` and history recorder, the same code the Android `CallScreeningService` runs: the panel shows the decision, matched rule and normalized number, and rejected calls appear in the History tab.
 
-Filter settings and the database are kept between runs in `/tmp/knobly-desktop/` (`call_filters.json`, `knobly.db`); delete the folder to start over.
+Filter settings and the database are kept between runs in `/tmp/knobly-desktop/` (`call_filters.json`, `knobly.db`; in the devcontainer, `/tmp` is `.local/devcontainer/tmp/`); delete the folder to start over.
 
 Hot Reload runs in explicit mode: after editing code, run `./gradlew :app:desktop:hotReloadJvmMain` (or start with `./gradlew :app:desktop:hotRunJvm --auto` to reload on save). The first `hotRunJvm` downloads the JetBrains Runtime it needs (`compose.reload.jbr.autoProvisioningEnabled` in `gradle.properties`).
 
@@ -145,7 +162,7 @@ adb shell cmd role add-role-holder android.app.role.CALL_SCREENING app.knobly
 # (filters are off by default: turn them on in the Filters tab first, e.g. a "Começa com 0303" rule)
 adb emu gsm call 03031234567      # rejected by a 0303 prefix rule
 adb emu gsm call 11988887777      # rings
-# Add a contact, to check that contacts always pass:
+# Add a contact, to check that contacts always pass (raw_contact_id 1 = the first contact of an empty emulator):
 adb shell content insert --uri content://com.android.contacts/raw_contacts --bind account_type:n: --bind account_name:n:
 adb shell content insert --uri content://com.android.contacts/data --bind raw_contact_id:i:1 \
     --bind mimetype:s:vnd.android.cursor.item/phone_v2 --bind data1:s:+5511912345678 --bind data2:i:2
@@ -192,10 +209,13 @@ Download the `knobly-debug-apk` artifact from a GitHub Actions run, copy the APK
 
 The app opens on the tabs. While call filtering is off, the **Filters** tab shows a "Call filtering is off" card: **Enable call filtering** asks Android to make Knobly the "caller ID & spam app" (`ROLE_CALL_SCREENING`). The system's phone app stays the default dialer; the role only lets Knobly check incoming calls before they ring. After that, incoming calls are screened by the filters turned on in the same tab ("Aceitar somente contatos" and custom rules); all filters are off by default. Decisions are logged to `adb logcat -s KnoblyScreening`.
 
+Knobly does not need to stay open: Android starts it for each incoming call, also after the app is closed or force-stopped and after a reboot (checked on the emulator). The first call after a reboot is the slowest (0.5 to 2.5 s with the debug build, within Android's 5 s limit); if the decision takes more than 3 s, Knobly lets the call ring. Some manufacturers (e.g. Xiaomi, Huawei) restrict apps from starting in the background: if calls are not screened there, allow Knobly's "autostart" in the phone's settings. To see whether a call reached Knobly at all, look for `CallScreeningServiceFilter` and `SCREENING_` in `adb logcat -s Telecom`.
+
 ## Tests and quality
 
 | What | Command |
 |---|---|
+| Everything (all checks + build of every module, including the shared code on its own) | `./gradlew build` |
 | All checks (unit tests on JVM and Android host, UI tests, Detekt, ktlint, Android lint) | `./gradlew check` |
 | One module | `./gradlew :domain:rules:jvmTest`, `./gradlew :core:phone:jvmTest` |
 | UI tests (desktop, headless) | `./gradlew :app:shared:jvmTest` |
@@ -237,9 +257,9 @@ The iOS app is intentionally reduced (see [platforms.md](platforms.md)): there i
 
 ## Continuous integration
 
-`.github/workflows/ci.yml`:
+`.github/workflows/ci.yml` runs **manually** (*Actions > CI > Run workflow*) and on pull requests; there is no `push` trigger while the project is under construction.
 
-- **android** (Ubuntu): `check`, `assembleDebug`, checks that the APK does not request `android.permission.INTERNET`, records screenshots, and uploads the `knobly-debug-apk` and `ui-screenshots` artifacts.
+- **android** (Ubuntu, full git history for the `versionCode`): `build`; fails if the build changed the committed Room schemas (a schema change without a database version bump); checks that the APK does not request `android.permission.INTERNET`; records screenshots; uploads the `knobly-debug-apk` and `ui-screenshots` artifacts.
 - **ios** (macOS): shared tests on the simulator, the simulator framework and the Xcode app build.
 
 ## Troubleshooting
@@ -252,3 +272,6 @@ The iOS app is intentionally reduced (see [platforms.md](platforms.md)): there i
 | Desktop window does not open | On the host: `xhost +local:`; check `echo $DISPLAY` in the container. |
 | `KVM is not available` | Enable virtualization in the BIOS / load `kvm_intel` or `kvm_amd` on the host, then rebuild the devcontainer. |
 | `Failed to find suitable JetBrains Runtime` | Keep `compose.reload.jbr.autoProvisioningEnabled=true` in `gradle.properties`. |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` on `adb install` | The installed app was signed with another key (debug vs release, or a lost debug keystore). Only uninstalling fixes it, which deletes the app's filters and history: `adb uninstall app.knobly`. |
+| `INSTALL_FAILED_VERSION_DOWNGRADE` | The APK has a lower `versionCode` than the installed one (e.g. built from an older commit). Debug builds can be downgraded with `adb install -r -d`. |
+| `Cannot compute versionCode from the git history` | Shallow clone or no git: use the full history, or pass `-Pknobly.versionCode=<n>`. |

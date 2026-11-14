@@ -31,8 +31,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Tests, Detekt, ktlint and Android lint
-        run: ./gradlew check --continue
+      - name: Build everything, tests, Detekt, ktlint and Android lint
+        # `build` = `check` + assembling every module, which also compiles the shared (common) code on its own.
+        run: ./gradlew build --continue
 
       - name: Verify the exported database schemas are committed and unchanged
         # A changed schema file for an existing version means the database version was not bumped (no migration).
@@ -42,9 +43,6 @@ jobs:
             echo "::error::Room schemas changed. Bump KnoblyDatabase.version, add a migration and commit the new schema (docs/adr/0007-app-updates-and-data-compatibility.md)."
             exit 1
           fi
-
-      - name: Build debug APK
-        run: ./gradlew :app:android:assembleDebug
 
       - name: Verify the APK does not request the INTERNET permission
         run: |
