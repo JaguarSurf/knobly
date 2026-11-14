@@ -1,8 +1,8 @@
 name: CI
 
+# No `push` trigger while the project is under construction: run it by hand (Actions > CI > Run workflow)
+# or through a pull request. Restore `push: branches: [main]` once the app stabilizes.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -20,6 +20,9 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history: the Android versionCode is the number of commits (docs/adr/0007-app-updates-and-data-compatibility.md).
+          fetch-depth: 0
 
       - uses: actions/setup-java@v6
         with:
@@ -30,6 +33,15 @@ jobs:
 
       - name: Tests, Detekt, ktlint and Android lint
         run: ./gradlew check --continue
+
+      - name: Verify the exported database schemas are committed and unchanged
+        # A changed schema file for an existing version means the database version was not bumped (no migration).
+        run: |
+          if [ -n "$(git status --porcelain -- core/database/schemas)" ]; then
+            git status --porcelain -- core/database/schemas
+            echo "::error::Room schemas changed. Bump KnoblyDatabase.version, add a migration and commit the new schema (docs/adr/0007-app-updates-and-data-compatibility.md)."
+            exit 1
+          fi
 
       - name: Build debug APK
         run: ./gradlew :app:android:assembleDebug

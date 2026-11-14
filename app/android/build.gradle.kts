@@ -21,10 +21,42 @@ fun signingValue(
 
 val releaseStoreFile = signingValue("storeFile", "KNOBLY_KEYSTORE_FILE")
 
+/**
+ * versionCode = number of commits on HEAD, so every APK built after a new commit installs as an update over the
+ * previous one (Android refuses downgrades). Builds without the git history (source archives, shallow clones) get
+ * 1 with a warning, and release builds fail: pass `-Pknobly.versionCode=<n>` or use the full history.
+ * See docs/adr/0007-app-updates-and-data-compatibility.md.
+ */
+val knoblyVersionCode: Int =
+    providers.gradleProperty("knobly.versionCode").orNull?.toInt()
+        ?: gitOutput("rev-parse", "--is-shallow-repository")
+            .takeIf { it == "false" }
+            ?.let { gitOutput("rev-list", "--count", "HEAD")?.toIntOrNull() }
+        ?: run {
+            val message =
+                "Cannot compute versionCode from the git history (no git, or a shallow clone). " +
+                    "Pass -Pknobly.versionCode=<n> or use the full history."
+            check(gradle.startParameter.taskNames.none { it.contains("release", ignoreCase = true) }) { message }
+            logger.warn("$message Using 1.")
+            1
+        }
+
+fun gitOutput(vararg args: String): String? =
+    runCatching {
+        providers
+            .exec {
+                commandLine("git", *args)
+                isIgnoreExitValue = true
+            }.standardOutput.asText
+            .get()
+            .trim()
+            .ifEmpty { null }
+    }.getOrNull()
+
 android {
     defaultConfig {
         applicationId = "app.knobly"
-        versionCode = 1
+        versionCode = knoblyVersionCode
         versionName = "0.1.0"
     }
 
@@ -40,6 +72,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Shown in the system's App info, to tell which build is installed: "0.1.0-debug (42)".
+            versionNameSuffix = "-debug ($knoblyVersionCode)"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

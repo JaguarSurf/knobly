@@ -59,6 +59,15 @@ Apps → features → domain → core, with dependencies always pointing downwar
 - Android minimum: **API 29 (Android 10)**, because of `RoleManager.ROLE_CALL_SCREENING`.
 - iOS: only the **Call Directory Extension** exists (static list). No per-call callback, no block log, contacts always take precedence.
 
+## Updates and stored data
+
+Users keep their filters and history across updates. Details in [ADR-0007](docs/adr/0007-app-updates-and-data-compatibility.md).
+
+- `versionCode` is the number of commits (`git rev-list --count HEAD`); `-Pknobly.versionCode=<n>` overrides it. Never rewrite `main`'s history.
+- **Room schema change** (`:core:database`): bump `KnoblyDatabase.version`, add a migration **and a migration test**, commit the new file in `core/database/schemas/`. Never edit an existing schema file; never use `fallbackToDestructiveMigration`. CI fails if the build changes committed schemas.
+- **Stored JSON** (`CallFilterSettings` and other `DocumentStore` documents): new fields need defaults; renaming/removing fields or changing `@SerialName` values needs a conversion and a test with the old JSON.
+- The release keystore must never be lost or replaced (it is the only key that can ship updates). `android:allowBackup` stays `false`.
+
 ## Testing without a smartphone
 
 Use the cheapest layer that covers the change (details in [ADR-0005](docs/adr/0005-desktop-harness-and-platform-ports.md)):

@@ -40,6 +40,7 @@ Detekt stays on 1.23.8 (latest stable; 2.0 is still alpha). It embeds its own Ko
 
 - The release keystore and its passwords are **never committed**. They are read from `keystore.properties` at the repository root, or from the `KNOBLY_KEYSTORE_FILE`, `KNOBLY_KEYSTORE_PASSWORD`, `KNOBLY_KEY_ALIAS`, `KNOBLY_KEY_PASSWORD` environment variables (for CI secrets). Both `keystore.properties` and `*.jks`/`*.keystore` are git-ignored.
 - Without credentials, `assembleRelease` still works and produces an unsigned APK.
+- The key must never be lost or replaced: it is the only one that can sign updates (see [ADR-0007](0007-app-updates-and-data-compatibility.md)).
 - Release builds use R8 (`isMinifyEnabled`, `isShrinkResources`).
 
 ## Alternatives considered

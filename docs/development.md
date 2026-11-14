@@ -174,6 +174,8 @@ adb logcat -s KnoblyScreening
 
 The pairing is remembered (the `adb` keys live in `~/.android`, persisted in `.local/devcontainer/android-home/`); next time only `adb connect` is needed. The port changes when wireless debugging is toggled.
 
+`adb install -r` updates the installed app and **keeps its filters and history**, as long as the APK is signed with the same key (the debug key in `~/.android/debug.keystore`, also persisted in `.local/devcontainer/android-home/`) and its `versionCode` is not lower. The `versionCode` is the number of commits, so APKs built after a new commit are always accepted as updates; the installed build is shown in *Settings > Apps > Knobly* as `0.1.0-debug (<versionCode>)`. Debug and release builds have different keys: switching between them requires uninstalling, which deletes the data. See [ADR-0007](adr/0007-app-updates-and-data-compatibility.md).
+
 ### Android 10 (no wireless pairing)
 
 Android 10 has no pairing screen. Either connect the phone by USB to an `adb` running **on the host** once and run `adb tcpip 5555`, then `adb connect <ip>:5555` from the devcontainer, or use USB passthrough (below).
