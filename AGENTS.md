@@ -102,6 +102,7 @@ scripts/emulator.sh                         # Android emulator (KVM), then: adb 
 adb pair <ip>:<pairing-port> && adb connect <ip>:<port>
 adb install -r app/android/build/outputs/apk/debug/knobly-debug.apk
 adb logcat -s KnoblyScreening               # screening decisions and timing
+scripts/diagnose-screening.sh <last digits>  # why a call rang or was rejected (role, permission, contacts, decision)
 
 # iOS (macOS only)
 ./gradlew iosSimulatorArm64Test

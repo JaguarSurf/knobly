@@ -193,6 +193,24 @@ The pairing is remembered (the `adb` keys live in `~/.android`, persisted in `.l
 
 `adb install -r` updates the installed app and **keeps its filters and history**, as long as the APK is signed with the same key (the debug key in `~/.android/debug.keystore`, also persisted in `.local/devcontainer/android-home/`) and its `versionCode` is not lower. The `versionCode` is the number of commits, so APKs built after a new commit are always accepted as updates; the installed build is shown in *Settings > Apps > Knobly* as `0.1.0-debug (<versionCode>)`. Debug and release builds have different keys: switching between them requires uninstalling, which deletes the data. See [ADR-0007](adr/0007-app-updates-and-data-compatibility.md).
 
+### Diagnosing a call
+
+When a call rang (or was rejected) unexpectedly:
+
+```bash
+scripts/diagnose-screening.sh 87654321   # at least the last 4 digits of the caller; then call the phone
+```
+
+| What the script shows | Meaning |
+|---|---|
+| `Knobly is NOT the call screening app` | Android does not ask Knobly about calls: enable call filtering again in the Filters tab (uninstalling removes the role, and also erases the filters) |
+| `The number is still saved` + an `account_type` | Another contact or account still has the number (duplicate, SIM, a messaging app's copy, a manufacturer's recycle bin): Knobly treats it as a contact |
+| `action=ALLOW rule=contacts-allow` | Knobly let it ring because it is a contact |
+| `action=ALLOW rule=null` | No filter matched: check that the filter is on and the contacts permission is granted |
+| No Knobly line at all | Android did not consult Knobly for this call |
+
+It only reads the phone over `adb` and prints locally.
+
 ### Android 10 (no wireless pairing)
 
 Android 10 has no pairing screen. Either connect the phone by USB to an `adb` running **on the host** once and run `adb tcpip 5555`, then `adb connect <ip>:5555` from the devcontainer, or use USB passthrough (below).
@@ -272,6 +290,7 @@ The iOS app is intentionally reduced (see [platforms.md](platforms.md)): there i
 | Desktop window does not open | On the host: `xhost +local:`; check `echo $DISPLAY` in the container. |
 | `KVM is not available` | Enable virtualization in the BIOS / load `kvm_intel` or `kvm_amd` on the host, then rebuild the devcontainer. |
 | `Failed to find suitable JetBrains Runtime` | Keep `compose.reload.jbr.autoProvisioningEnabled=true` in `gradle.properties`. |
+| A call rang although a filter should have rejected it | Connect the phone and run `scripts/diagnose-screening.sh <last digits of the caller>`, then call. It checks the call screening role (lost on every reinstall), the version and the contacts permission, lists any contact (in any account: Google, device, SIM, WhatsApp, Telegram…) that still has the number, and shows Knobly's decision for the call. See [Diagnosing a call](#diagnosing-a-call). |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` on `adb install` | The installed app was signed with another key (debug vs release, or a lost debug keystore). Only uninstalling fixes it, which deletes the app's filters and history: `adb uninstall app.knobly`. |
 | `INSTALL_FAILED_VERSION_DOWNGRADE` | The APK has a lower `versionCode` than the installed one (e.g. built from an older commit). Debug builds can be downgraded with `adb install -r -d`. |
 | `Cannot compute versionCode from the git history` | Shallow clone or no git: use the full history, or pass `-Pknobly.versionCode=<n>`. |
