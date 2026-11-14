@@ -33,7 +33,7 @@ Until now `versionCode` was fixed at `1`, so installed builds could not be told 
 ### Stored data stays readable after updates
 
 - **Room (`:core:database`):** any change to an entity or table requires bumping `KnoblyDatabase.version`, a `Migration` (or Room auto-migration), a **migration test**, and the new exported schema committed under `core/database/schemas/`. Exported schema files of released versions are never edited. **No destructive fallback** (`fallbackToDestructiveMigration`): the history is never wiped silently. CI fails when the build changes the committed schemas, which catches a schema change without a version bump.
-- **JSON documents (`:core:datastore`):** new fields must have defaults; unknown fields are ignored (`ignoreUnknownKeys`). Renaming or removing a field, or changing its meaning, needs a conversion step and a test that reads the old JSON. `@SerialName` values (e.g. `CustomRuleType`) are part of the stored format and must not change.
+- **JSON documents (`:core:datastore`):** new fields must have defaults; unknown fields are ignored (`ignoreUnknownKeys`). Renaming or removing a field, or changing its meaning, needs a conversion step and a test that reads the old JSON. `@SerialName` values (e.g. `CustomRuleType`, `ThemeMode`) and the document names (`call_filters`, `app_settings`: the file names) are part of the stored format and must not change.
 
 ### Backup
 

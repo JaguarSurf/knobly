@@ -3,12 +3,12 @@ package app.knobly.platform.androidscreening
 import androidx.room.Room
 import app.knobly.core.database.KnoblyDatabase
 import app.knobly.core.database.buildKnoblyDatabase
-import app.knobly.core.datastore.createJsonDocumentStore
+import app.knobly.core.datastore.DocumentStoreFactory
+import app.knobly.core.datastore.JsonDocumentStoreFactory
 import app.knobly.core.phone.LibPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.port.ContactsAccess
 import app.knobly.domain.port.ScreeningRoleController
-import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.SCREENING_DISPATCHER
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -24,13 +24,9 @@ val androidScreeningModule =
         single { AndroidScreeningRoleController(androidContext()) } bind ScreeningRoleController::class
         single { AndroidContactsAccess(androidContext()) } bind ContactsAccess::class
         single<PhoneNumberNormalizer> { LibPhoneNumberNormalizer() }
-        single {
-            createJsonDocumentStore(
-                path = File(androidContext().filesDir, "datastore/call_filters.json").absolutePath,
-                serializer = CallFilterSettings.serializer(),
-                default = CallFilterSettings(),
-                scope = get(),
-            )
+        // files/datastore/<name>.json, e.g. call_filters.json
+        single<DocumentStoreFactory> {
+            JsonDocumentStoreFactory(File(androidContext().filesDir, "datastore").absolutePath, scope = get())
         }
         single {
             val context = androidContext()

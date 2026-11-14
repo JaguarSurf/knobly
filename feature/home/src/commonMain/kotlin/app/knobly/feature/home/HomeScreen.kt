@@ -49,6 +49,7 @@ import app.knobly.core.designsystem.KnoblyRoundIcon
 import app.knobly.core.designsystem.KnoblyStatus
 import app.knobly.core.designsystem.KnoblyTheme
 import app.knobly.core.designsystem.poppinsFamily
+import app.knobly.domain.settings.ThemeMode
 import app.knobly.feature.home.resources.Res
 import app.knobly.feature.home.resources.home_active_filters
 import app.knobly.feature.home.resources.home_calls
@@ -89,7 +90,9 @@ fun HomeScreen(
     onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
+    themeViewModel: ThemeViewModel = koinViewModel(),
 ) {
+    val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
     val callsStatus by viewModel.callsStatus.collectAsStateWithLifecycle()
     val activity by viewModel.activity.collectAsStateWithLifecycle()
     HomeContent(
@@ -100,6 +103,8 @@ fun HomeScreen(
         onEnableCallFiltering = viewModel::enableCallFiltering,
         onOpenCalls = onOpenCalls,
         onOpenHistory = onOpenHistory,
+        themeMode = themeMode,
+        onThemeModeChange = themeViewModel::setThemeMode,
         modifier = modifier,
     )
 }
@@ -114,6 +119,8 @@ fun HomeContent(
     onOpenCalls: () -> Unit,
     onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    onThemeModeChange: (ThemeMode) -> Unit = {},
 ) {
     val c = KnoblyTheme.colors
     Column(
@@ -125,28 +132,9 @@ fun HomeContent(
                 ).padding(horizontal = 18.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                stringResource(
-                    when (dayPart) {
-                        DayPart.MORNING -> Res.string.home_greeting_morning
-                        DayPart.AFTERNOON -> Res.string.home_greeting_afternoon
-                        DayPart.EVENING -> Res.string.home_greeting_evening
-                    },
-                ),
-                style = MaterialTheme.typography.bodyLarge,
-                color = c.textSecondary,
-            )
-            val start = stringResource(Res.string.home_headline_start)
-            val end = stringResource(Res.string.home_headline_end)
-            Text(
-                buildAnnotatedString {
-                    append(start)
-                    append("\n")
-                    withStyle(SpanStyle(color = c.accent)) { append(end) }
-                },
-                style = MaterialTheme.typography.headlineMedium,
-            )
+        Row(verticalAlignment = Alignment.Top) {
+            Greeting(dayPart, Modifier.weight(1f))
+            ThemeMenuButton(themeMode, onThemeModeChange)
         }
 
         CallsHeroCard(isCallFilteringAvailable, callsStatus, activity, onEnableCallFiltering)
@@ -238,6 +226,38 @@ private fun CallsHeroCard(
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp).testTag(HomeTestTags.ENABLE_CALL_FILTERING),
             )
         }
+    }
+}
+
+/** "Boa noite" + "Seu celular, sob controle." */
+@Composable
+private fun Greeting(
+    dayPart: DayPart,
+    modifier: Modifier = Modifier,
+) {
+    val c = KnoblyTheme.colors
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            stringResource(
+                when (dayPart) {
+                    DayPart.MORNING -> Res.string.home_greeting_morning
+                    DayPart.AFTERNOON -> Res.string.home_greeting_afternoon
+                    DayPart.EVENING -> Res.string.home_greeting_evening
+                },
+            ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = c.textSecondary,
+        )
+        val start = stringResource(Res.string.home_headline_start)
+        val end = stringResource(Res.string.home_headline_end)
+        Text(
+            buildAnnotatedString {
+                append(start)
+                append("\n")
+                withStyle(SpanStyle(color = c.accent)) { append(end) }
+            },
+            style = MaterialTheme.typography.headlineMedium,
+        )
     }
 }
 

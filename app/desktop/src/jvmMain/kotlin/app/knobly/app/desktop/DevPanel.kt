@@ -90,7 +90,10 @@ fun DevPanel(modifier: Modifier = Modifier) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Switch(checked = contactsGranted, onCheckedChange = contacts::setGranted)
-                    Text("Contacts permission granted (fake contact: (11) 91234-5678)")
+                    Text(
+                        "Contacts permission granted " +
+                            "(fake contacts: (11) 91234-5678 and (35) 8123-4567, saved without the 9)",
+                    )
                 }
 
                 HorizontalDivider()

@@ -11,6 +11,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.v2.runComposeUiTest
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
 import app.knobly.domain.rules.call.CustomRuleType
+import app.knobly.domain.settings.ThemeMode
 import app.knobly.feature.calls.FiltersTestTags
 import app.knobly.feature.history.HistoryFilter
 import app.knobly.feature.history.HistoryTestTags
@@ -264,6 +266,20 @@ class AppTest {
 
             onNodeWithTag(HomeTestTags.LATEST_REJECTION).performClick()
             onNodeWithTag("tab.history").assertIsSelected()
+        }
+
+    @Test
+    fun `the theme is chosen from the home header and saved`() =
+        runComposeUiTest {
+            val env = startTestKoin(roleHeld = true)
+            setContent { App() }
+
+            onNodeWithContentDescription("Tema: Sistema").assertIsDisplayed()
+            onNodeWithTag(HomeTestTags.THEME).performClick()
+            onNodeWithTag(HomeTestTags.themeOption(ThemeMode.DARK)).performClick()
+
+            assertEquals(ThemeMode.DARK, env.appSettings.value.themeMode)
+            onNodeWithContentDescription("Tema: Escuro").assertIsDisplayed()
         }
 
     private fun ComposeUiTest.textField(tag: String) = onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag(tag)))

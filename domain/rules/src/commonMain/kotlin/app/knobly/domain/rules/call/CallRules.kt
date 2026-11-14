@@ -4,6 +4,7 @@ import app.knobly.core.model.Action
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.model.PhoneNumber
 import app.knobly.core.model.RuleId
+import app.knobly.core.phone.PhoneNumberMatching
 import app.knobly.domain.rules.Rule
 import app.knobly.domain.rules.RuleContext
 
@@ -50,7 +51,10 @@ data class HiddenNumberRule(
     ): Boolean = event.number == null
 }
 
-/** Matches one specific number: same E.164 form when both are known, otherwise the same national number. */
+/**
+ * Matches one specific number, also when it is saved or arrives without the country code, the DDD or the 9th digit
+ * ([PhoneNumberMatching], docs/specs/phone-number-matching.md).
+ */
 data class ExactNumberRule(
     override val id: RuleId,
     override val priority: Int,
@@ -63,15 +67,7 @@ data class ExactNumberRule(
         context: RuleContext,
     ): Boolean {
         val number = event.number ?: return false
-        val targetE164 = target.e164
-        val numberE164 = number.e164
-        return if (targetE164 != null &&
-            numberE164 != null
-        ) {
-            targetE164 == numberE164
-        } else {
-            target.national == number.national
-        }
+        return PhoneNumberMatching.sameNumber(number, target)
     }
 }
 

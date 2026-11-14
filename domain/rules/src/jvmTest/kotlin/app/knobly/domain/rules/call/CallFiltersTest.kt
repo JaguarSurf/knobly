@@ -31,15 +31,24 @@ class CallFiltersTest {
         id: String = type.name + value,
     ) = CustomRule(id = id, type = type, value = value, enabled = enabled)
 
+    private fun TestScope.screener(
+        settings: CallFilterSettings,
+        contacts: TestContacts = TestContacts(listOf(contact)),
+    ): CallScreener {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        val provider = CallRulesProvider(InMemoryDocumentStore(settings).data, normalizer, backgroundScope)
+        val directory = ContactDirectory(contacts, normalizer, backgroundScope, dispatcher)
+        return CallScreener(provider, directory, backgroundScope, dispatcher)
+    }
+
+    private suspend fun CallScreener.screen(caller: String?): Decision =
+        screen(IncomingCall(normalizer.normalize(caller), now))
+
     private suspend fun TestScope.screen(
         settings: CallFilterSettings,
         caller: String?,
-        contacts: TestContacts = TestContacts(setOf(contact)),
-    ): Decision {
-        val provider = CallRulesProvider(InMemoryDocumentStore(settings).data, normalizer, backgroundScope)
-        val screener = CallScreener(provider, contacts, backgroundScope, UnconfinedTestDispatcher(testScheduler))
-        return screener.screen(IncomingCall(normalizer.normalize(caller), now))
-    }
+        contacts: TestContacts = TestContacts(listOf(contact)),
+    ): Decision = screener(settings, contacts).screen(caller)
 
     @Test
     fun `everything off lets every call ring`() =
@@ -61,7 +70,7 @@ class CallFiltersTest {
     fun `contacts only does nothing when the contacts permission is missing`() =
         runTest {
             val settings = CallFilterSettings(contactsOnly = true)
-            assertEquals(Decision.Default, screen(settings, stranger, TestContacts(setOf(contact), granted = false)))
+            assertEquals(Decision.Default, screen(settings, stranger, TestContacts(listOf(contact), granted = false)))
         }
 
     @Test
@@ -134,11 +143,65 @@ class CallFiltersTest {
         }
 
     @Test
-    fun `contacts are looked up at most once per call`() =
+    fun `contacts are read once and again only when they change`() =
         runTest {
-            val contacts = TestContacts(setOf(contact))
-            screen(CallFilterSettings(contactsOnly = true), stranger, contacts)
-            assertEquals(1, contacts.lookups)
+            val contacts = TestContacts(listOf(contact))
+            val screener = screener(CallFilterSettings(contactsOnly = true), contacts)
+
+            screener.screen(stranger)
+            screener.screen("(11) 91234-5678")
+            assertEquals(1, contacts.reads)
+
+            // No notification needed: the next call sees that the contacts changed.
+            contacts.numbers = listOf(contact, stranger)
+            assertEquals(Action.ALLOW, screener.screen(stranger).action)
+            assertEquals(2, contacts.reads)
+        }
+
+    @Test
+    fun `contacts saved without the 9th digit, the DDD or the country code still pass`() =
+        runTest {
+            val settings = CallFilterSettings(contactsOnly = true)
+            val oldFormat = TestContacts(listOf("(35) 8123-4567", "8765-4321"))
+
+            assertEquals(Action.ALLOW, screen(settings, "+55 35 98123-4567", oldFormat).action)
+            assertEquals(Action.ALLOW, screen(settings, "(11) 98765-4321", oldFormat).action)
+            assertEquals(Action.ALLOW, screen(settings, "035 98765-4321", oldFormat).action)
+            // Same ending, other DDD: not the saved number.
+            assertEquals(Action.REJECT, screen(settings, "(11) 98123-4567", oldFormat).action)
+        }
+
+    @Test
+    fun `contacts in the old format are also protected from custom rules`() =
+        runTest {
+            val settings =
+                CallFilterSettings(customRulesEnabled = true, customRules = listOf(rule(CustomRuleType.PREFIX, "35")))
+            val oldFormat = TestContacts(listOf("(35) 8123-4567"))
+
+            assertEquals(
+                Decision(Action.ALLOW, CallFilterRuleIds.CONTACTS_ALLOW),
+                screen(settings, "35 98123-4567", oldFormat),
+            )
+            assertEquals(Action.REJECT, screen(settings, "35 98123-0000", oldFormat).action)
+        }
+
+    @Test
+    fun `an exact number rule matches with or without the 9th digit and the DDD`() =
+        runTest {
+            val old =
+                CallFilterSettings(
+                    customRulesEnabled = true,
+                    customRules = listOf(rule(CustomRuleType.EXACT_NUMBER, "(35) 8123-4567")),
+                )
+            assertEquals(Action.REJECT, screen(old, "+55 35 98123-4567").action)
+
+            val noDdd =
+                CallFilterSettings(
+                    customRulesEnabled = true,
+                    customRules = listOf(rule(CustomRuleType.EXACT_NUMBER, "98123-4567")),
+                )
+            assertEquals(Action.REJECT, screen(noDdd, "(35) 8123-4567").action)
+            assertEquals(Action.ALLOW, screen(noDdd, "(35) 98123-4568").action)
         }
 
     @Test

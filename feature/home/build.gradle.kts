@@ -7,6 +7,7 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.domain.rules)
             implementation(projects.domain.stats)
+            implementation(projects.domain.settings)
             implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {

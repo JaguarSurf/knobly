@@ -31,4 +31,8 @@
     <string name="home_latest_date">Rejected on %2$d/%1$d at %3$s</string>
     <string name="home_hidden_number">Hidden number</string>
     <string name="home_open_history">Open history</string>
+    <string name="home_theme">Theme: %1$s</string>
+    <string name="home_theme_system">System</string>
+    <string name="home_theme_light">Light</string>
+    <string name="home_theme_dark">Dark</string>
 </resources>

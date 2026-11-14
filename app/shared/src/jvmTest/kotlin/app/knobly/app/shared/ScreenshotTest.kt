@@ -15,8 +15,10 @@ import app.knobly.domain.history.RejectedCall
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
 import app.knobly.domain.rules.call.CustomRuleType
+import app.knobly.domain.settings.ThemeMode
 import app.knobly.feature.calls.FiltersTestTags
 import app.knobly.feature.history.HistoryTestTags
+import app.knobly.feature.home.HomeTestTags
 import io.github.takahirom.roborazzi.captureRoboImage
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -34,14 +36,16 @@ class ScreenshotTest {
         name: String,
         roleHeld: Boolean = true,
         tab: String? = null,
-        dark: Boolean = false,
+        /** `null`: the theme comes from [themeMode], as in the app. */
+        dark: Boolean? = false,
+        themeMode: ThemeMode = ThemeMode.SYSTEM,
         settings: CallFilterSettings = CallFilterSettings(),
         contactsGranted: Boolean = true,
         history: List<RejectedCall> = emptyList(),
         thenClick: String? = null,
         then: ComposeUiTest.() -> Unit = {},
     ) = runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT) {
-        startTestKoin(roleHeld, contactsGranted, settings, history)
+        startTestKoin(roleHeld, contactsGranted, settings, history, themeMode)
         setContent { App(darkTheme = dark) }
         tab?.let { onNodeWithTag(it).performClick() }
         thenClick?.let { onNodeWithTag(it).performScrollTo().performClick() }
@@ -55,6 +59,12 @@ class ScreenshotTest {
 
     @Test
     fun homeDark() = screenshot("home-dark", dark = true)
+
+    @Test
+    fun homeThemeMenu() = screenshot("home-theme-menu", settings = SAMPLE, thenClick = HomeTestTags.THEME)
+
+    @Test
+    fun homeDarkFromSettings() = screenshot("home-dark-from-settings", dark = null, themeMode = ThemeMode.DARK)
 
     @Test
     fun homeFilteringOff() = screenshot("home-filtering-off", roleHeld = false)

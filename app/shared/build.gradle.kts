@@ -18,6 +18,7 @@ kotlin {
             api(projects.domain.rules)
             api(projects.domain.history)
             api(projects.domain.stats)
+            api(projects.domain.settings)
             implementation(libs.kotlinx.datetime)
             implementation(projects.core.designsystem)
             implementation(projects.feature.home)

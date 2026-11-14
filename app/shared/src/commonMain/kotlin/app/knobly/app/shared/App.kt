@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,6 +31,8 @@ import app.knobly.core.designsystem.KnoblyIcons
 import app.knobly.core.designsystem.KnoblyNavBar
 import app.knobly.core.designsystem.KnoblyNavItem
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.domain.settings.AppSettingsRepository
+import app.knobly.domain.settings.ThemeMode
 import app.knobly.feature.calls.FiltersScreen
 import app.knobly.feature.calls.RuleEditorScreen
 import app.knobly.feature.history.HistoryScreen
@@ -37,6 +42,7 @@ import app.knobly.feature.stats.StatsScreen
 import kotlinx.serialization.Serializable
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import kotlin.reflect.KClass
 
 @Serializable data object HomeRoute
@@ -66,13 +72,28 @@ enum class TopLevelDestination(
     STATS(StatsRoute, StatsRoute::class, Res.string.nav_stats, KnoblyIcons.Stats, "tab.stats"),
 }
 
-/** Root of the shared UI, used by every platform (Android, iOS, desktop harness). */
+/**
+ * Root of the shared UI, used by every platform (Android, iOS, desktop harness).
+ *
+ * The theme follows the user's choice (System, Light or Dark, docs/specs/appearance.md); [darkTheme] forces one
+ * (screenshots). [onDarkThemeChange] lets the platform match its own chrome, e.g. Android's status bar icons.
+ */
 @Composable
 fun App(
     modifier: Modifier = Modifier,
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean? = null,
+    onDarkThemeChange: (Boolean) -> Unit = {},
 ) {
-    KnoblyTheme(darkTheme = darkTheme) {
+    val themeMode by koinInject<AppSettingsRepository>().themeMode.collectAsState()
+    val systemDark = isSystemInDarkTheme()
+    val dark =
+        darkTheme ?: when (themeMode) {
+            ThemeMode.LIGHT -> false
+            ThemeMode.DARK -> true
+            ThemeMode.SYSTEM, null -> systemDark
+        }
+    LaunchedEffect(dark) { onDarkThemeChange(dark) }
+    KnoblyTheme(darkTheme = dark) {
         KnoblyBackground(modifier.fillMaxSize()) {
             MainScaffold()
         }

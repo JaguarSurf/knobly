@@ -14,7 +14,7 @@ Knobly is a **control center for the phone**: calls first, then messages, notifi
 
 ## Themes
 
-The app follows the system setting (light/dark). The two themes share layout, shapes and type; only the colors change.
+By default the app follows the system setting (light/dark); the user can also pick Light or Dark from the Início header ([specs/appearance.md](../specs/appearance.md)). The two themes share layout, shapes and type; only the colors change.
 
 ### Dark — "Noturno" (accent: mint)
 

@@ -26,7 +26,7 @@ Custom rule types:
 | Type | Matches | Example |
 |---|---|---|
 | Starts with (prefix) | Numbers starting with the given digits; the trunk prefix `0` is optional (`0303` matches `+55 303…`) | `0303`, `0304`, `+1`, `11 4004` |
-| Exact number | One specific number, compared in E.164 when possible | `(11) 91234-5678` |
+| Exact number | One specific number, also when saved or received without the country code, the DDD or the 9th digit ([phone-number-matching.md](phone-number-matching.md)) | `(11) 91234-5678` |
 | Hidden number | Calls without caller id | — |
 | Regular expression (advanced) | Regex over the number's digits (national, E.164 and as received); Android only | `^0800` |
 
@@ -35,7 +35,7 @@ Each rule can be paused (toggle), edited and deleted. Rules are not reordered.
 ## How filters combine
 
 - Filters **add up**: a call is rejected if **any** enabled filter matches.
-- **Contacts always pass**: a number saved in the contacts is never rejected, even if it matches a custom rule.
+- **Contacts always pass**: a number saved in the contacts is never rejected, even if it matches a custom rule. Contacts saved without the 9th digit, the DDD or the country code count too ([phone-number-matching.md](phone-number-matching.md)).
 - There is no user-visible priority. Internally the rule engine evaluates an allow rule for contacts first, then the reject rules; with a single action this is equivalent to the union of the filters. Future exceptions (e.g. "always allow") will also win over filters.
 
 ## Action: Reject
@@ -57,7 +57,7 @@ Outside the app's control: the caller hears busy/voicemail depending on the carr
 ## Data and behavior
 
 - Toggles and rules are persisted as one JSON document (`CallFilterSettings`, through the `DocumentStore` of `:core:datastore`; each rule is `id + type + value + label + enabled`, see [ADR-0004](../adr/0004-generic-rule-engine.md)). `CallRulesProvider` keeps the engine rules built from it in memory for the `CallScreeningService`; changes apply to the next call immediately.
-- Contacts are looked up through the `ContactsAccess` port, once per call and only when a filter is on (Android: `ContactsContract.PhoneLookup`, which handles number formats itself). Without the permission the lookup is unavailable and **fails open**: "contacts only" does nothing instead of rejecting every call.
+- Contacts are matched in memory by `ContactDirectory`, an index of the saved numbers built from the `ContactsAccess` port and rebuilt when a call finds that the contacts changed ([phone-number-matching.md](phone-number-matching.md)). Without the permission the lookup is unavailable and **fails open**: "contacts only" does nothing instead of rejecting every call.
 - `CallScreener` answers within 3 seconds at most: if reading the settings or the contacts takes longer, the call rings (fail open).
 - Regex rules are validated when saved (invalid patterns are rejected) and compiled once; pattern length is limited to keep matching fast inside the service.
 - The hard-coded spike rules (`SpikeRules`, 0303/0304) were removed; with every filter off, every call rings.

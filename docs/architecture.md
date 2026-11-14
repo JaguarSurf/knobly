@@ -32,6 +32,7 @@ flowchart TD
     subgraph Domain
         DR[":domain:rules<br/>rule engine"]
         DH[":domain:history<br/>rejected calls"]
+        DSet[":domain:settings<br/>app preferences"]
         DS[":domain:stats"]
     end
 
@@ -57,6 +58,7 @@ flowchart TD
 
     FHome & FC & FSet & FO --> DR
     FH --> DH
+    FHome --> DS & DSet
     FS --> DS
     FHome & FC & FH & FS & FSet & FO --> CDes
 
@@ -65,7 +67,8 @@ flowchart TD
     DH --> DR & CD
 
     DR --> CM & CP & CD & CDS
-    DS --> CM & CD
+    DS --> DH
+    DSet --> CDS
     PF --> DR
 ```
 
@@ -76,10 +79,11 @@ flowchart TD
 | `:core:model` | Entities: `Rule`, `Event`, `IncomingCall`, `Decision`, `CallEvent` |
 | `:core:phone` | Phone number normalization and comparison (E.164, +55, DDD area codes, 9th digit, hidden number) |
 | `:core:database` | Room (KSP, bundled SQLite on every target): `KnoblyDatabase`, DAOs, exported schemas (`core/database/schemas/`) and migrations |
-| `:core:datastore` | Persisted JSON documents (`DocumentStore`: call filter settings, later other preferences) |
+| `:core:datastore` | Persisted JSON documents: `DocumentStore`, created by name through a `DocumentStoreFactory` (`call_filters`, `app_settings`) |
 | `:core:designsystem` | Theme, colors, typography, reusable components |
 | `:domain:rules` | Rule engine: evaluation, ordering, caching, rule repository |
-| `:domain:history` | Rejected calls: repository on the database, recorder (rule snapshot, 1-year retention) |
+| `:domain:history` | Rejected calls: repository on the database, recorder (rule snapshot, 3-year retention) |
+| `:domain:settings` | App preferences (`AppSettings`: theme), see [specs/appearance.md](specs/appearance.md) |
 | `:domain:stats` | Statistics of rejected calls: buckets per period in the local time zone, counts per filter, Home summary |
 | `:feature:home` | Control center (the **Início** tab): status of each module and the way into its controls; future modules (messages, notifications) appear here |
 | `:feature:calls` | Screens to create, edit, reorder and enable call rules |
@@ -118,9 +122,10 @@ interface ScreeningRoleController {
 
 interface ContactsAccess {
     val isGranted: StateFlow<Boolean>
-    suspend fun requestAccess(): Boolean // shows the system permission dialog
+    suspend fun requestAccess(): Boolean    // shows the system permission dialog
     fun openAppSettings()
-    fun isContact(number: PhoneNumber): Boolean // blocking lookup, called off the main thread
+    fun phoneNumbers(): List<String>        // every saved number, as saved; blocking
+    fun contactsVersion(): String           // changes when the contacts change; cheap, read on every call
 }
 ```
 
@@ -128,11 +133,11 @@ interface ContactsAccess {
 |---|---|---|---|
 | `ScreeningRoleController` | `AndroidScreeningRoleController` (`RoleManager.ROLE_CALL_SCREENING`) | `IosScreeningRoleController` (no role; guide to Settings) | `FakeScreeningRoleController` (toggle) |
 | `PhoneNumberNormalizer` (`:core:phone`) | `LibPhoneNumberNormalizer` | PhoneNumberKit (planned, from Swift) | `LibPhoneNumberNormalizer` |
-| `ContactsAccess` | `AndroidContactsAccess` (`READ_CONTACTS`, `ContactsContract.PhoneLookup`) | `IosContactsAccess` (stub, never granted; contacts already win on iOS) | `FakeContactsAccess` (one fake contact, permission toggle) |
+| `ContactsAccess` | `AndroidContactsAccess` (`READ_CONTACTS`, saved numbers and a version from `ContactsContract`) | `IosContactsAccess` (stub, never granted; contacts already win on iOS) | `FakeContactsAccess` (two fake contacts, one saved without the 9th digit; permission toggle) |
 
 Incoming calls are not a port: on Android the `CallScreeningService` calls `CallScreener` (`:domain:rules`) directly (it must answer within seconds), and the desktop harness's incoming call simulator does the same with the same screener and normalizer. iOS has no per-call callback.
 
-Call filter settings live in one JSON document behind `DocumentStore<CallFilterSettings>` (`:core:datastore`, DataStore + okio on every target; `InMemoryDocumentStore` in tests). `CallRulesProvider` turns it into engine rules kept in memory, and `CallScreener` evaluates them with a per-call, memoized contacts lookup and a timeout that fails open.
+Call filter settings live in one JSON document behind `DocumentStore<CallFilterSettings>` (`:core:datastore`, DataStore + okio on every target; `InMemoryDocumentStore` in tests). `CallRulesProvider` turns it into engine rules kept in memory, and `CallScreener` evaluates them with `ContactDirectory` (the contacts' numbers indexed in memory, matched with or without the DDD and the 9th digit, see [specs/phone-number-matching.md](specs/phone-number-matching.md)) and a timeout that fails open. Each platform provides a `DocumentStoreFactory` (JSON files in a platform folder; in memory for tests).
 
 Koin modules per app wire the real adapters (`:app:android`, `iosApp`) or the fakes (`:app:desktop`, tests). `:feature:*` modules never call platform APIs directly.
 

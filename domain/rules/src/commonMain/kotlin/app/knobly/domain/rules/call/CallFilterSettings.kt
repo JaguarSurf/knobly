@@ -16,6 +16,11 @@ data class CallFilterSettings(
     /** Filters that currently reject calls: "contacts only" plus each enabled custom rule while the group is on. */
     val activeFilterCount: Int
         get() = (if (contactsOnly) 1 else 0) + (if (customRulesEnabled) customRules.count { it.enabled } else 0)
+
+    companion object {
+        /** Stored as `call_filters.json`: the name must never change, or users lose their filters. */
+        const val DOCUMENT_NAME = "call_filters"
+    }
 }
 
 /** A user-defined rule: `type + value`, plus a label and its own on/off switch. */

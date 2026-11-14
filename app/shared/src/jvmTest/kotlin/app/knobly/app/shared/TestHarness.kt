@@ -1,7 +1,8 @@
 package app.knobly.app.shared
 
-import app.knobly.core.datastore.DocumentStore
+import app.knobly.core.datastore.DocumentStoreFactory
 import app.knobly.core.datastore.InMemoryDocumentStore
+import app.knobly.core.datastore.InMemoryDocumentStoreFactory
 import app.knobly.core.phone.LibPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.history.CallHistoryRepository
@@ -10,6 +11,8 @@ import app.knobly.domain.history.RejectedCall
 import app.knobly.domain.port.ContactsAccess
 import app.knobly.domain.port.ScreeningRoleController
 import app.knobly.domain.rules.call.CallFilterSettings
+import app.knobly.domain.settings.AppSettings
+import app.knobly.domain.settings.ThemeMode
 import app.knobly.platform.fake.FakeContactsAccess
 import app.knobly.platform.fake.FakeScreeningRoleController
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +50,7 @@ internal fun startTestKoin(
     contactsGranted: Boolean = true,
     settings: CallFilterSettings = CallFilterSettings(),
     history: List<RejectedCall> = emptyList(),
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
 ): TestEnv {
     Dispatchers.setMain(UnconfinedTestDispatcher())
     Locale.setDefault(Locale.forLanguageTag("pt-BR"))
@@ -56,6 +60,7 @@ internal fun startTestKoin(
             contacts = FakeContactsAccess(granted = contactsGranted),
             settings = InMemoryDocumentStore(settings),
             history = InMemoryCallHistoryRepository(history),
+            appSettings = InMemoryDocumentStore(AppSettings(themeMode)),
         )
     startKoin {
         modules(
@@ -64,7 +69,14 @@ internal fun startTestKoin(
                     single { env.role } bind ScreeningRoleController::class
                     single { env.contacts } bind ContactsAccess::class
                     single<PhoneNumberNormalizer> { LibPhoneNumberNormalizer() }
-                    single<DocumentStore<CallFilterSettings>> { env.settings }
+                    single<DocumentStoreFactory> {
+                        InMemoryDocumentStoreFactory(
+                            mapOf(
+                                CallFilterSettings.DOCUMENT_NAME to env.settings,
+                                AppSettings.DOCUMENT_NAME to env.appSettings,
+                            ),
+                        )
+                    }
                     // Overrides of the shared graph: no database, and a fixed "now" for stable screenshots.
                     single<CallHistoryRepository> { env.history }
                     single<Clock> { FixedClock }

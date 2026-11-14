@@ -13,7 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import app.knobly.core.model.PhoneNumber
 import app.knobly.domain.port.ContactsAccess
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,11 +20,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * [ContactsAccess] backed by `READ_CONTACTS` and `ContactsContract.PhoneLookup`, which matches the same number in
- * different formats (`+55 11 …`, `011 …`, `11 …`) the way the system dialer does.
+ * [ContactsAccess] backed by `READ_CONTACTS` and `ContactsContract`: reads every saved phone number (the domain
+ * indexes and matches them) and a cheap version of the contacts (the latest update and deletion times).
  *
- * Requesting the permission needs an activity: [bind] it from `onCreate`. Lookups work from any context (also from
- * the call screening service), but block: never call [isContact] on the main thread.
+ * Requesting the permission needs an activity: [bind] it from `onCreate`. Reads work from any context (also from
+ * the call screening service), but block: never call [phoneNumbers] on the main thread.
  */
 class AndroidContactsAccess(
     context: Context,
@@ -85,13 +84,43 @@ class AndroidContactsAccess(
         appContext.startActivity(intent)
     }
 
-    override fun isContact(number: PhoneNumber): Boolean {
-        if (!isGrantedNow()) return false
-        val lookupNumber = number.e164 ?: number.raw
-        val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(lookupNumber))
+    override fun phoneNumbers(): List<String> {
+        if (!isGrantedNow()) return emptyList()
+        val phones = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+        val column = ContactsContract.CommonDataKinds.Phone.NUMBER
         return appContext.contentResolver
-            .query(uri, arrayOf(ContactsContract.PhoneLookup._ID), null, null, null)
-            ?.use { it.moveToFirst() } ?: false
+            .query(phones, arrayOf(column), null, null, null)
+            ?.use { cursor -> buildList { while (cursor.moveToNext()) cursor.getString(0)?.let(::add) } }
+            .orEmpty()
+    }
+
+    /**
+     * When the most recently changed contact was updated, and when the most recently deleted one was deleted: any
+     * insert, edit or delete changes one of them. Two one-row queries.
+     */
+    override fun contactsVersion(): String {
+        if (!isGrantedNow()) return ""
+        val updated =
+            latest(
+                ContactsContract.Contacts.CONTENT_URI,
+                ContactsContract.Contacts.CONTACT_LAST_UPDATED_TIMESTAMP,
+            )
+        val deleted =
+            latest(
+                ContactsContract.DeletedContacts.CONTENT_URI,
+                ContactsContract.DeletedContacts.CONTACT_DELETED_TIMESTAMP,
+            )
+        return "$updated/$deleted"
+    }
+
+    private fun latest(
+        table: Uri,
+        column: String,
+    ): Long {
+        val uri = table.buildUpon().appendQueryParameter(ContactsContract.LIMIT_PARAM_KEY, "1").build()
+        return appContext.contentResolver
+            .query(uri, arrayOf(column), null, null, "$column DESC")
+            ?.use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L } ?: 0L
     }
 
     private fun refresh() {

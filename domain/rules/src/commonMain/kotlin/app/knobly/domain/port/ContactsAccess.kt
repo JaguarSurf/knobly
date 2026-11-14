@@ -1,12 +1,14 @@
 package app.knobly.domain.port
 
-import app.knobly.core.model.PhoneNumber
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Port: access to the user's contacts (permission and lookup).
+ * Port: access to the user's contacts (permission and their phone numbers).
  *
- * Android: `READ_CONTACTS` + `ContactsContract.PhoneLookup`. iOS: not used for filtering (contacts always win there).
+ * Only reads the numbers as the user saved them: matching a call against them (with or without the DDD, the country
+ * code or the 9th digit) is done by the domain, see `ContactDirectory` and docs/specs/phone-number-matching.md.
+ *
+ * Android: `READ_CONTACTS` + `ContactsContract`. iOS: not used for filtering (contacts always win there).
  * Desktop harness and tests: a fake.
  */
 interface ContactsAccess {
@@ -18,6 +20,12 @@ interface ContactsAccess {
     /** Opens the system screen where the user can grant a permission that was denied. */
     fun openAppSettings()
 
-    /** Whether [number] is saved in the contacts. May block: never call on the main thread. */
-    fun isContact(number: PhoneNumber): Boolean
+    /** Every phone number in the contacts, as saved. Empty without the permission. Blocks: never on the main thread. */
+    fun phoneNumbers(): List<String>
+
+    /**
+     * A value that changes whenever the contacts change (added, edited or deleted). Read on every call, so it must be
+     * cheap. Blocks: never on the main thread.
+     */
+    fun contactsVersion(): String
 }

@@ -1,26 +1,35 @@
 package app.knobly.domain.rules.call
 
-import app.knobly.core.model.PhoneNumber
 import app.knobly.domain.port.ContactsAccess
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-/** Contacts by E.164 number, for domain tests. */
+/** Contacts as saved by a user (any format), for domain tests. Counts how often they are read. */
 internal class TestContacts(
-    private val numbers: Set<String>,
+    numbers: List<String>,
     granted: Boolean = true,
 ) : ContactsAccess {
     private val grantedState = MutableStateFlow(granted)
+    private var version = 0
     override val isGranted: StateFlow<Boolean> = grantedState
-    var lookups = 0
+
+    var numbers: List<String> = numbers
+        set(value) {
+            field = value
+            version++
+        }
+
+    var reads = 0
         private set
 
     override suspend fun requestAccess(): Boolean = grantedState.value
 
     override fun openAppSettings() = Unit
 
-    override fun isContact(number: PhoneNumber): Boolean {
-        lookups++
-        return number.e164 in numbers
+    override fun contactsVersion(): String = version.toString()
+
+    override fun phoneNumbers(): List<String> {
+        reads++
+        return if (grantedState.value) numbers else emptyList()
     }
 }

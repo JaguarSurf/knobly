@@ -60,6 +60,30 @@ object KnoblyIcons {
 
     val Copy: ImageVector by lazy { strokeIcon("Copy", "M9 9h11v11H9z", "M5 15H4V4h11v1") }
 
+    val Sun: ImageVector by lazy {
+        strokeIcon(
+            "Sun",
+            circle(12f, 12f, 4f),
+            "M12 2v2",
+            "M12 20v2",
+            "M4.9 4.9l1.4 1.4",
+            "M17.7 17.7l1.4 1.4",
+            "M2 12h2",
+            "M20 12h2",
+            "M4.9 19.1l1.4-1.4",
+            "M17.7 6.3l1.4-1.4",
+        )
+    }
+
+    val Moon: ImageVector by lazy { strokeIcon("Moon", "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z") }
+
+    /** Half-filled circle: "follow the system" theme. */
+    val ThemeSystem: ImageVector by lazy {
+        strokeIcon("ThemeSystem", circle(12f, 12f, 9f), filled = listOf("M12 3a9 9 0 0 1 0 18z"))
+    }
+
+    val Check: ImageVector by lazy { strokeIcon("Check", "M5 12.5l4.5 4.5L19 7.5") }
+
     private const val PHONE =
         "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"
 

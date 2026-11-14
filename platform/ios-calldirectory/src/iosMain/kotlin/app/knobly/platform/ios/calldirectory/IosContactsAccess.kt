@@ -1,6 +1,5 @@
 package app.knobly.platform.ios.calldirectory
 
-import app.knobly.core.model.PhoneNumber
 import app.knobly.domain.port.ContactsAccess
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,5 +16,7 @@ class IosContactsAccess : ContactsAccess {
 
     override fun openAppSettings() = Unit
 
-    override fun isContact(number: PhoneNumber): Boolean = false
+    override fun phoneNumbers(): List<String> = emptyList()
+
+    override fun contactsVersion(): String = ""
 }

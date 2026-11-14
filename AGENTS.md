@@ -50,7 +50,7 @@ Apps → features → domain → core, with dependencies always pointing downwar
 - **Visual identity:** UI follows [docs/design/visual-identity.md](docs/design/visual-identity.md) (dark "Noturno" with mint accent, light "Pedra", Poppins + Inter, "Fader k" icon). Feature behavior follows the specs in `docs/specs/`.
 - **UI changes come with tests:** a Compose UI test and/or a Roborazzi screenshot for new or changed screens.
 - **Every new filter rule** is an implementation of `Rule` + a UI form; do not change the engine to add a type.
-- **Tests are mandatory** for the rule engine and for number normalization (Brazilian cases: +55, DDD area codes, 9th digit, hidden number, 0303/0304).
+- **Tests are mandatory** for the rule engine and for number normalization and matching (Brazilian cases: +55, DDD area codes, 9th digit, numbers saved without DDD, hidden number, 0303/0304; see [specs/phone-number-matching.md](docs/specs/phone-number-matching.md)).
 - **Relevant architectural decisions** become an ADR in `docs/adr/` (copy `docs/adr/0000-template.md`).
 
 ## Critical constraints the code must respect
@@ -65,7 +65,7 @@ Users keep their filters and history across updates. Details in [ADR-0007](docs/
 
 - `versionCode` is the number of commits (`git rev-list --count HEAD`); `-Pknobly.versionCode=<n>` overrides it. Never rewrite `main`'s history.
 - **Room schema change** (`:core:database`): bump `KnoblyDatabase.version`, add a migration **and a migration test**, commit the new file in `core/database/schemas/`. Never edit an existing schema file; never use `fallbackToDestructiveMigration`. CI fails if the build changes committed schemas.
-- **Stored JSON** (`CallFilterSettings` and other `DocumentStore` documents): new fields need defaults; renaming/removing fields or changing `@SerialName` values needs a conversion and a test with the old JSON.
+- **Stored JSON** (`CallFilterSettings`, `AppSettings` and other `DocumentStore` documents): new fields need defaults; renaming/removing fields or changing `@SerialName` values or document names needs a conversion and a test with the old JSON.
 - The release keystore must never be lost or replaced (it is the only key that can ship updates). `android:allowBackup` stays `false`.
 
 ## Testing without a smartphone
@@ -116,4 +116,4 @@ Notes for agents:
 
 ## Current status
 
-Phase: **Android MVP**. The app has four tabs (Início, Filtros, Histórico, Estatísticas) in pt-BR and English, the design system and the launcher icon. The Filters tab implements [specs/call-filters.md](docs/specs/call-filters.md): the call screening role card, "contacts only" (with the `READ_CONTACTS` flow), and custom rules (prefix, exact number, hidden number, regex) persisted as JSON and screened by `CallScreener` in the `CallScreeningService`. The History tab ([specs/call-history.md](docs/specs/call-history.md)) lists rejected calls stored in Room (`:core:database`, `:domain:history`) for 3 years. The Statistics tab ([specs/call-statistics.md](docs/specs/call-statistics.md)) charts them per hour, day, week, month and year, and Home shows today's and the last 7 days' rejections plus the latest one. See [roadmap.md](docs/roadmap.md).
+Phase: **Android MVP**. The app has four tabs (Início, Filtros, Histórico, Estatísticas) in pt-BR and English, the design system and the launcher icon. The Filters tab implements [specs/call-filters.md](docs/specs/call-filters.md): the call screening role card, "contacts only" (with the `READ_CONTACTS` flow), and custom rules (prefix, exact number, hidden number, regex) persisted as JSON and screened by `CallScreener` in the `CallScreeningService`. The History tab ([specs/call-history.md](docs/specs/call-history.md)) lists rejected calls stored in Room (`:core:database`, `:domain:history`) for 3 years. The Statistics tab ([specs/call-statistics.md](docs/specs/call-statistics.md)) charts them per hour, day, week, month and year, and Home shows today's and the last 7 days' rejections plus the latest one. Contacts and "exact number" rules match with or without the country code, the DDD and the 9th digit ([specs/phone-number-matching.md](docs/specs/phone-number-matching.md)). The theme (System, Light, Dark) is chosen on the Home header ([specs/appearance.md](docs/specs/appearance.md)). See [roadmap.md](docs/roadmap.md).
