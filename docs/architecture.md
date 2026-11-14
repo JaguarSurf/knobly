@@ -31,6 +31,7 @@ flowchart TD
 
     subgraph Domain
         DR[":domain:rules<br/>rule engine"]
+        DH[":domain:history<br/>rejected calls"]
         DS[":domain:stats"]
     end
 
@@ -54,12 +55,14 @@ flowchart TD
     AS -. iOS only .-> PI
     AD --> PF
 
-    FHome & FC & FH & FSet & FO --> DR
+    FHome & FC & FSet & FO --> DR
+    FH --> DH
     FS --> DS
     FHome & FC & FH & FS & FSet & FO --> CDes
 
-    PA --> DR
+    PA --> DR & DH
     PI --> DR
+    DH --> DR & CD
 
     DR --> CM & CP & CD & CDS
     DS --> CM & CD
@@ -72,14 +75,15 @@ flowchart TD
 |---|---|
 | `:core:model` | Entities: `Rule`, `Event`, `IncomingCall`, `Decision`, `CallEvent` |
 | `:core:phone` | Phone number normalization and comparison (E.164, +55, DDD area codes, 9th digit, hidden number) |
-| `:core:database` | Room: DAOs, migrations, aggregation queries |
+| `:core:database` | Room (KSP, bundled SQLite on every target): `KnoblyDatabase`, DAOs, exported schemas (`core/database/schemas/`) and migrations |
 | `:core:datastore` | Persisted JSON documents (`DocumentStore`: call filter settings, later other preferences) |
 | `:core:designsystem` | Theme, colors, typography, reusable components |
 | `:domain:rules` | Rule engine: evaluation, ordering, caching, rule repository |
+| `:domain:history` | Rejected calls: repository on the database, recorder (rule snapshot, 1-year retention) |
 | `:domain:stats` | Statistics use cases (aggregation by period) |
 | `:feature:home` | Control center (the **Início** tab): status of each module and the way into its controls; future modules (messages, notifications) appear here |
 | `:feature:calls` | Screens to create, edit, reorder and enable call rules |
-| `:feature:history` | List of filtered events |
+| `:feature:history` | The **Histórico** tab: rejected calls by day, filters, details sheet, clear history |
 | `:feature:stats` | Charts and dashboards |
 | `:feature:settings` | General settings, backup, import/export |
 | `:feature:onboarding` | Call filtering setup: the "Call filtering is off" card (shown in the Filters tab by `:app:shared`) that requests the call screening role; on iOS, guides the user to the native features |
@@ -188,13 +192,15 @@ sequenceDiagram
     E-->>S: Decision (ALLOW / SILENCE / REJECT)
     S->>OS: respondToCall(response)
     Note over S,OS: respond fast, before any I/O
-    S-)DB: write CallEvent (async)
+    S-)DB: CallHistoryRecorder writes the rejected call (async, process scope)
     S-)N: "Call blocked by rule X" (optional)
 ```
 
 ## Data and statistics
 
-Table `call_events`: `id`, `number_e164`, `timestamp_utc`, `decision`, `matched_rule_id`.
+Table `call_events` (only rejected calls for now, see [specs/call-history.md](specs/call-history.md)): `id`, `timestamp_utc` (indexed), `number_raw`, `number_e164`, `number_national`, `action`, `reason`, `matched_rule_id`, and a snapshot of the rule (`rule_type`, `rule_value`, `rule_label`). Retention: 1 year, applied when a call is recorded.
+
+Each platform module builds the `KnoblyDatabase` (Android: app database path; desktop harness: temp dir; iOS: documents) with `buildKnoblyDatabase()`; UI tests replace the history with `InMemoryCallHistoryRepository`.
 
 Statistics are computed through SQL aggregation (`GROUP BY` over hour, day, week, month and year buckets, converted to the local time zone). If the volume grows, a WorkManager job can maintain a pre-aggregated table.
 
@@ -214,7 +220,7 @@ Layers from fastest to slowest feedback (see [ADR-0005](adr/0005-desktop-harness
 **Android**
 - The system wakes up the `CallScreeningService` on every call: **no foreground service** and no battery optimization exemption.
 - Requires the `ROLE_CALL_SCREENING` role (API 29+), requested from the "Enable call filtering" card in the Filters tab via `RoleManager`. It does not replace the default dialer: the system phone app keeps handling calls.
-- WorkManager for maintenance: pruning old history and pre-aggregation.
+- WorkManager for maintenance, if ever needed: pre-aggregation for statistics. History retention does not need it (old entries are pruned when a call is recorded).
 
 **iOS**
 - The app writes the list to the App Group and calls `CXCallDirectoryManager.reloadExtension`.

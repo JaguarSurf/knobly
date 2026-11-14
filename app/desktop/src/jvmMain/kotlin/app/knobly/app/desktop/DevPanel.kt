@@ -31,6 +31,7 @@ import app.knobly.core.designsystem.KnoblyTheme
 import app.knobly.core.model.Decision
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.phone.PhoneNumberNormalizer
+import app.knobly.domain.history.CallHistoryRecorder
 import app.knobly.domain.rules.call.CallScreener
 import app.knobly.platform.fake.FakeContactsAccess
 import app.knobly.platform.fake.FakeScreeningRoleController
@@ -53,6 +54,7 @@ fun DevPanel(modifier: Modifier = Modifier) {
     val roleController = koinInject<FakeScreeningRoleController>()
     val contacts = koinInject<FakeContactsAccess>()
     val screener = koinInject<CallScreener>()
+    val recorder = koinInject<CallHistoryRecorder>()
     val normalizer = koinInject<PhoneNumberNormalizer>()
     val scope = rememberCoroutineScope()
     val roleHeld by roleController.isRoleHeld.collectAsState()
@@ -63,7 +65,12 @@ fun DevPanel(modifier: Modifier = Modifier) {
     fun simulate(raw: String?) {
         val call = IncomingCall(normalizer.normalize(raw), Clock.System.now())
         // Same path as the Android CallScreeningService: in-memory rules + contacts + engine.
-        scope.launch { calls.add(0, SimulatedCall(raw ?: "(hidden)", call, screener.screen(call))) }
+        // Like the Android CallScreeningService: decide, then store rejected calls in the history.
+        scope.launch {
+            val decision = screener.screen(call)
+            calls.add(0, SimulatedCall(raw ?: "(hidden)", call, decision))
+            recorder.record(call, decision)
+        }
     }
 
     KnoblyTheme {

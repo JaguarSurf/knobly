@@ -24,6 +24,8 @@ Latest stable releases that are **inside each other's supported ranges** (checke
 
 AGP 9.5.1 + Gradle 9.9.1 are newer, but outside the range tested by Kotlin 2.4.21. Upgrade them together with the next Kotlin release that supports them.
 
+KSP 2.3.13 runs the Room compiler (`:core:database`). KSP2 releases no longer follow the Kotlin version, so any recent KSP2 works with Kotlin 2.4.x; pick a release that has been out for a couple of weeks.
+
 Detekt stays on 1.23.8 (latest stable; 2.0 is still alpha). It embeds its own Kotlin compiler, so the build pins Detekt's classpath to it.
 
 ### Gradle structure

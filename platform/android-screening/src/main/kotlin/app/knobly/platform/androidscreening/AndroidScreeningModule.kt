@@ -1,5 +1,8 @@
 package app.knobly.platform.androidscreening
 
+import androidx.room.Room
+import app.knobly.core.database.KnoblyDatabase
+import app.knobly.core.database.buildKnoblyDatabase
 import app.knobly.core.datastore.createJsonDocumentStore
 import app.knobly.core.phone.LibPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
@@ -28,6 +31,14 @@ val androidScreeningModule =
                 default = CallFilterSettings(),
                 scope = get(),
             )
+        }
+        single {
+            val context = androidContext()
+            Room
+                .databaseBuilder<KnoblyDatabase>(
+                    context,
+                    context.getDatabasePath(KnoblyDatabase.FILE_NAME).absolutePath,
+                ).buildKnoblyDatabase()
         }
         // Contacts lookups block on the content provider: screen calls on the IO dispatcher.
         single<CoroutineDispatcher>(named(SCREENING_DISPATCHER)) { Dispatchers.IO }

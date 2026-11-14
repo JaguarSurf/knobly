@@ -10,8 +10,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import androidx.room.Room
 import app.knobly.app.shared.App
 import app.knobly.app.shared.knoblyModules
+import app.knobly.core.database.KnoblyDatabase
+import app.knobly.core.database.buildKnoblyDatabase
 import app.knobly.core.datastore.createJsonDocumentStore
 import app.knobly.core.phone.LibPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
@@ -28,6 +31,9 @@ import java.io.File
 /** Width of the "phone" area, close to a typical Android phone in dp. */
 private val PhoneWidth = 412.dp
 
+/** The harness's settings and database (delete it to start over). */
+private val harnessDir = File(System.getProperty("java.io.tmpdir"), "knobly-desktop").apply { mkdirs() }
+
 fun main() {
     startKoin {
         modules(
@@ -38,12 +44,14 @@ fun main() {
                     single<PhoneNumberNormalizer> { LibPhoneNumberNormalizer() }
                     // Persisted between harness runs, outside the project.
                     single {
+                        Room
+                            .databaseBuilder<KnoblyDatabase>(
+                                name = File(harnessDir, KnoblyDatabase.FILE_NAME).absolutePath,
+                            ).buildKnoblyDatabase()
+                    }
+                    single {
                         createJsonDocumentStore(
-                            path =
-                                File(
-                                    System.getProperty("java.io.tmpdir"),
-                                    "knobly-desktop/call_filters.json",
-                                ).absolutePath,
+                            path = File(harnessDir, "call_filters.json").absolutePath,
                             serializer = CallFilterSettings.serializer(),
                             default = CallFilterSettings(),
                             scope = get(),

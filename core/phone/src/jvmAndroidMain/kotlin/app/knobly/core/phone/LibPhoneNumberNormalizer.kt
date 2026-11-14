@@ -37,4 +37,37 @@ class LibPhoneNumberNormalizer(
             national = parsed?.let(util::getNationalSignificantNumber) ?: digits.removePrefix("+"),
         )
     }
+
+    override fun format(number: PhoneNumber): String {
+        val parsed =
+            number.e164?.let {
+                try {
+                    util.parse(it, defaultRegion)
+                } catch (_: NumberParseException) {
+                    null
+                }
+            } ?: return formatNonGeographic(number.raw) ?: number.raw
+        val style =
+            if (util.getRegionCodeForNumber(parsed) == defaultRegion) {
+                PhoneNumberUtil.PhoneNumberFormat.NATIONAL
+            } else {
+                PhoneNumberUtil.PhoneNumberFormat.INTERNATIONAL
+            }
+        return util.format(parsed, style)
+    }
+
+    /**
+     * Brazilian non-geographic numbers that libphonenumber does not know as valid (e.g. `0304` donations) are still
+     * shown the way they are written in Brazil: `0304 765 4321`.
+     */
+    private fun formatNonGeographic(raw: String): String? =
+        brazilianNonGeographic
+            .takeIf { defaultRegion == "BR" }
+            ?.matchEntire(raw)
+            ?.destructured
+            ?.let { (service, block, line) -> "$service $block $line" }
+
+    private companion object {
+        val brazilianNonGeographic = Regex("^(0[3589]0\\d)(\\d{3})(\\d{4})$")
+    }
 }

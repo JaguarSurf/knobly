@@ -113,7 +113,10 @@ keytool -genkeypair -keystore /workspace/.local/knobly-release.jks -alias knobly
 The window shows the app at phone width plus **Dev tools**:
 
 - a switch to grant/revoke the (fake) call screening role, which shows/hides the "Call filtering is off" card in the Filters tab;
-- an **incoming call simulator**: type a number (e.g. `0303 123 4567`) or press *Hidden*. The call goes through the real normalizer and rule engine, the same code the Android `CallScreeningService` runs, and the panel shows the decision, matched rule and normalized number.
+- a switch to grant/revoke the (fake) contacts permission; the only fake contact is (11) 91234-5678;
+- an **incoming call simulator**: type a number (e.g. `0303 123 4567`) or press *Hidden*. The call goes through the real normalizer, `CallScreener` and history recorder, the same code the Android `CallScreeningService` runs: the panel shows the decision, matched rule and normalized number, and rejected calls appear in the History tab.
+
+Filter settings and the database are kept between runs in `/tmp/knobly-desktop/` (`call_filters.json`, `knobly.db`); delete the folder to start over.
 
 Hot Reload runs in explicit mode: after editing code, run `./gradlew :app:desktop:hotReloadJvmMain` (or start with `./gradlew :app:desktop:hotRunJvm --auto` to reload on save). The first `hotRunJvm` downloads the JetBrains Runtime it needs (`compose.reload.jbr.autoProvisioningEnabled` in `gradle.properties`).
 

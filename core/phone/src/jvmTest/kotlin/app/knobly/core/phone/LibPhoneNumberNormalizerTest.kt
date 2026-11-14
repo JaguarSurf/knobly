@@ -73,4 +73,24 @@ class LibPhoneNumberNormalizerTest {
     fun `foreign numbers keep their own country code`() {
         assertEquals("+16502530000", e164("+1 650 253 0000"))
     }
+
+    private fun display(raw: String) = normalizer.format(requireNotNull(normalizer.normalize(raw)))
+
+    @Test
+    fun `display format is national for Brazilian numbers and international otherwise`() {
+        assertEquals("(11) 91234-5678", display("+5511912345678"))
+        assertEquals("(11) 4002-8922", display("1140028922"))
+        assertEquals("0303 123 4567", display("03031234567"))
+        assertEquals("+1 650-253-0000", display("+16502530000"))
+    }
+
+    @Test
+    fun `Brazilian non-geographic numbers are formatted even when libphonenumber rejects them`() {
+        assertEquals("0304 765 4321", display("0304 765 4321"))
+    }
+
+    @Test
+    fun `other numbers that cannot be parsed are shown as received`() {
+        assertEquals("12345", display("12345"))
+    }
 }

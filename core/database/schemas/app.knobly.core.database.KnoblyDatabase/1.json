@@ -1,0 +1,95 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "6d7ec5699cbcd45de89ae2dbe11c6798",
+    "entities": [
+      {
+        "tableName": "call_events",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp_utc` INTEGER NOT NULL, `number_raw` TEXT, `number_e164` TEXT, `number_national` TEXT, `action` TEXT NOT NULL, `reason` TEXT NOT NULL, `matched_rule_id` TEXT, `rule_type` TEXT, `rule_value` TEXT, `rule_label` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestampUtc",
+            "columnName": "timestamp_utc",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numberRaw",
+            "columnName": "number_raw",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "numberE164",
+            "columnName": "number_e164",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "numberNational",
+            "columnName": "number_national",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "action",
+            "columnName": "action",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "matchedRuleId",
+            "columnName": "matched_rule_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ruleType",
+            "columnName": "rule_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ruleValue",
+            "columnName": "rule_value",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ruleLabel",
+            "columnName": "rule_label",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_call_events_timestamp_utc",
+            "unique": false,
+            "columnNames": [
+              "timestamp_utc"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_call_events_timestamp_utc` ON `${TABLE_NAME}` (`timestamp_utc`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6d7ec5699cbcd45de89ae2dbe11c6798')"
+    ]
+  }
+}

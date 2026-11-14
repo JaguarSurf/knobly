@@ -4,6 +4,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
@@ -19,6 +20,8 @@ import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
 import app.knobly.domain.rules.call.CustomRuleType
 import app.knobly.feature.calls.FiltersTestTags
+import app.knobly.feature.history.HistoryFilter
+import app.knobly.feature.history.HistoryTestTags
 import app.knobly.feature.home.HomeTestTags
 import app.knobly.feature.onboarding.CallFilteringTestTags
 import kotlin.test.AfterTest
@@ -47,7 +50,7 @@ class AppTest {
 
             onNodeWithTag("tab.history").performClick()
             onNodeWithTag("tab.history").assertIsSelected()
-            onNodeWithText("As chamadas filtradas pelo Knobly aparecerão aqui.").assertIsDisplayed()
+            onNodeWithText("Nenhuma chamada rejeitada").assertIsDisplayed()
 
             onNodeWithTag("tab.stats").performClick()
             onNodeWithTag("tab.stats").assertIsSelected()
@@ -160,6 +163,69 @@ class AppTest {
             onNodeWithTag(FiltersTestTags.CONTACTS_PERMISSION_MESSAGE).assertIsDisplayed()
             onNodeWithText("Abrir configurações").performClick()
             assertEquals(1, env.contacts.settingsOpened)
+        }
+
+    @Test
+    fun `history lists rejected calls by day and filters them`() =
+        runComposeUiTest {
+            startTestKoin(roleHeld = true, history = SampleHistory.calls)
+            setContent { App() }
+            onNodeWithTag("tab.history").performClick()
+
+            onNodeWithText("HOJE").assertIsDisplayed()
+            onNodeWithText("0303 123 4567").assertIsDisplayed()
+            onNodeWithTag(HistoryTestTags.entry(1))
+                .assertTextContains("Telemarketing · começa com 0303")
+                .assertTextContains("13:32")
+            onNodeWithText("Número oculto").assertIsDisplayed()
+
+            onNodeWithTag(HistoryTestTags.filter(HistoryFilter.RULES)).performClick()
+            onNodeWithText("Número oculto").assertDoesNotExist()
+            onNodeWithText("0303 123 4567").assertIsDisplayed()
+
+            onNodeWithTag(HistoryTestTags.filter(HistoryFilter.CONTACTS_ONLY)).performClick()
+            onNodeWithText("0303 123 4567").assertDoesNotExist()
+            onNodeWithText("(21) 99876-5432").assertIsDisplayed()
+        }
+
+    @Test
+    fun `a history entry opens details and can be deleted`() =
+        runComposeUiTest {
+            val env = startTestKoin(roleHeld = true, history = SampleHistory.calls)
+            setContent { App() }
+            onNodeWithTag("tab.history").performClick()
+
+            onNodeWithTag(HistoryTestTags.entry(1)).performClick()
+            onNodeWithTag(HistoryTestTags.DETAILS).assertIsDisplayed()
+            onNodeWithText("14 de novembro de 2026 às 13:32").assertIsDisplayed()
+            onNodeWithTag(HistoryTestTags.COPY).performClick()
+            onNodeWithText("Número copiado").assertIsDisplayed()
+
+            onNodeWithTag(HistoryTestTags.DELETE).performClick()
+
+            onNodeWithTag(HistoryTestTags.DETAILS).assertDoesNotExist()
+            assertTrue(env.history.value.none { it.id == 1L })
+            onNodeWithText("0303 123 4567").assertDoesNotExist()
+        }
+
+    @Test
+    fun `clearing the history asks for confirmation`() =
+        runComposeUiTest {
+            val env = startTestKoin(roleHeld = true, history = SampleHistory.calls)
+            setContent { App() }
+            onNodeWithTag("tab.history").performClick()
+
+            onNodeWithTag(HistoryTestTags.CLEAR).performClick()
+            onNodeWithText("As 7 chamadas rejeitadas serão apagadas deste aparelho.").assertIsDisplayed()
+            onNodeWithText("Cancelar").performClick()
+            assertEquals(7, env.history.value.size)
+
+            onNodeWithTag(HistoryTestTags.CLEAR).performClick()
+            onNodeWithTag(HistoryTestTags.CLEAR_CONFIRM).performClick()
+
+            assertTrue(env.history.value.isEmpty())
+            onNodeWithText("Nenhuma chamada rejeitada").assertIsDisplayed()
+            onNodeWithTag(HistoryTestTags.CLEAR).assertDoesNotExist()
         }
 
     private fun ComposeUiTest.textField(tag: String) = onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag(tag)))

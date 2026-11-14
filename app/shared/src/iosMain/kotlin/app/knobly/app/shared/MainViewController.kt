@@ -1,6 +1,9 @@
 package app.knobly.app.shared
 
 import androidx.compose.ui.window.ComposeUIViewController
+import androidx.room.Room
+import app.knobly.core.database.KnoblyDatabase
+import app.knobly.core.database.buildKnoblyDatabase
 import app.knobly.core.datastore.createJsonDocumentStore
 import app.knobly.core.phone.DigitsOnlyPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
@@ -27,6 +30,15 @@ fun initKoin() {
                     single<ContactsAccess> { IosContactsAccess() }
                     // TODO(ios): PhoneNumberKit from Swift (docs/architecture.md, Platform ports).
                     single<PhoneNumberNormalizer> { DigitsOnlyPhoneNumberNormalizer() }
+                    // Stays empty on iOS (no per-call callback, docs/platforms.md),
+                    // but keeps one graph for all platforms.
+                    single {
+                        Room
+                            .databaseBuilder<KnoblyDatabase>(
+                                name =
+                                    documentsDirectory() + "/" + KnoblyDatabase.FILE_NAME,
+                            ).buildKnoblyDatabase()
+                    }
                     single {
                         createJsonDocumentStore(
                             path = documentsDirectory() + "/call_filters.json",

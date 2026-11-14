@@ -16,6 +16,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(projects.domain.rules)
+            api(projects.domain.history)
+            implementation(libs.kotlinx.datetime)
             implementation(projects.core.designsystem)
             implementation(projects.feature.home)
             implementation(projects.feature.calls)

@@ -21,7 +21,7 @@ Emulator results (Android 17 / API 37, 2026-11-14): the role request dialog gran
 - [x] Call filtering setup: request the call screening role and the contacts permission (from the Filters tab)
 - [ ] Rules: contacts only, exact number (block list), regex, prefix (0303/0304), hidden number (done, see [specs/call-filters.md](specs/call-filters.md)); allow list
 - [ ] Actions: reject (done), silence, allow
-- [ ] History tab
+- [x] History tab (see [specs/call-history.md](specs/call-history.md))
 - [ ] Statistics tab (hour, day, week, month, year)
 - [ ] Tests for the rule engine and phone number normalization
 - [ ] CI with build, tests, Detekt and ktlint

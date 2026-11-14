@@ -6,15 +6,16 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
+import app.knobly.domain.history.RejectedCall
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
 import app.knobly.domain.rules.call.CustomRuleType
 import app.knobly.feature.calls.FiltersTestTags
+import app.knobly.feature.history.HistoryTestTags
 import io.github.takahirom.roborazzi.captureRoboImage
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -35,15 +36,17 @@ class ScreenshotTest {
         dark: Boolean = false,
         settings: CallFilterSettings = CallFilterSettings(),
         contactsGranted: Boolean = true,
+        history: List<RejectedCall> = emptyList(),
         thenClick: String? = null,
         then: ComposeUiTest.() -> Unit = {},
     ) = runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT) {
-        startTestKoin(roleHeld, contactsGranted, settings)
+        startTestKoin(roleHeld, contactsGranted, settings, history)
         setContent { App(darkTheme = dark) }
         tab?.let { onNodeWithTag(it).performClick() }
         thenClick?.let { onNodeWithTag(it).performScrollTo().performClick() }
         then()
-        onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
+        // The whole scene, so sheets and dialogs (separate layers) are in the picture too.
+        captureToImage().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
     @Test
@@ -107,7 +110,32 @@ class ScreenshotTest {
         }
 
     @Test
-    fun history() = screenshot("history", tab = "tab.history")
+    fun historyEmpty() = screenshot("history-empty", tab = "tab.history")
+
+    @Test
+    fun history() = screenshot("history", tab = "tab.history", history = SampleHistory.calls)
+
+    @Test
+    fun historyDark() = screenshot("history-dark", tab = "tab.history", history = SampleHistory.calls, dark = true)
+
+    @Test
+    fun historyDetailsDark() =
+        screenshot(
+            "history-details-dark",
+            tab = "tab.history",
+            history = SampleHistory.calls,
+            dark = true,
+            thenClick = HistoryTestTags.entry(1),
+        )
+
+    @Test
+    fun historyClear() =
+        screenshot(
+            "history-clear",
+            tab = "tab.history",
+            history = SampleHistory.calls,
+            thenClick = HistoryTestTags.CLEAR,
+        )
 
     @Test
     fun stats() = screenshot("stats", tab = "tab.stats")

@@ -44,7 +44,7 @@ The only action for now. The call is answered by the `CallScreeningService` with
 
 - the phone does not ring, show the call or notify (no "missed call");
 - the call is hidden from the system call log as far as Android allows: the platform still records it with type `CallLog.Calls.BLOCKED_TYPE` regardless of `setSkipCallLog`, and whether the phone app shows blocked calls depends on the phone app;
-- it **is** recorded in Knobly's own History tab, so the user can check what was blocked.
+- it **is** recorded in Knobly's own History tab, so the user can check what was blocked (see [call-history.md](call-history.md)).
 
 Outside the app's control: the caller hears busy/voicemail depending on the carrier, and some manufacturers may behave differently (to be checked on real devices, see [roadmap.md](../roadmap.md)).
 

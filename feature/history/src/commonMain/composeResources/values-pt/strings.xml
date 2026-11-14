@@ -1,5 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="history_title">Histórico</string>
-    <string name="history_empty_message">As chamadas filtradas pelo Knobly aparecerão aqui.</string>
+    <string name="history_subtitle">Chamadas rejeitadas pelo Knobly. Elas não tocaram nem notificaram.</string>
+    <string name="history_filter_all">Todas</string>
+    <string name="history_filter_contacts">Fora dos contatos</string>
+    <string name="history_filter_rules">Regras</string>
+    <string name="history_today">Hoje</string>
+    <string name="history_yesterday">Ontem</string>
+    <string name="history_date">%1$d de %2$s</string>
+    <string name="history_date_year">%1$d de %2$s de %3$d</string>
+    <string-array name="history_months">
+        <item>janeiro</item>
+        <item>fevereiro</item>
+        <item>março</item>
+        <item>abril</item>
+        <item>maio</item>
+        <item>junho</item>
+        <item>julho</item>
+        <item>agosto</item>
+        <item>setembro</item>
+        <item>outubro</item>
+        <item>novembro</item>
+        <item>dezembro</item>
+    </string-array>
+    <string name="history_hidden_number">Número oculto</string>
+    <string name="history_reason_contacts">Fora dos contatos</string>
+    <string name="history_reason_unknown">Regra excluída</string>
+    <string name="history_rule_prefix">Começa com %1$s</string>
+    <string name="history_rule_exact">Número exato</string>
+    <string name="history_rule_hidden">Número oculto</string>
+    <string name="history_rule_regex">Expressão regular %1$s</string>
+    <string name="history_footer">O histórico fica só neste aparelho e é guardado por 1 ano.</string>
+    <string name="history_empty_title">Nenhuma chamada rejeitada</string>
+    <string name="history_empty_message">Quando o Knobly rejeitar uma chamada, ela aparece aqui.</string>
+    <string name="history_empty_filter">Nenhuma chamada neste filtro.</string>
+    <string name="history_clear">Limpar histórico</string>
+    <string name="history_clear_title">Limpar o histórico?</string>
+    <plurals name="history_clear_message">
+        <item quantity="one">A chamada rejeitada será apagada deste aparelho.</item>
+        <item quantity="other">As %1$d chamadas rejeitadas serão apagadas deste aparelho.</item>
+    </plurals>
+    <string name="history_clear_confirm">Limpar</string>
+    <string name="history_cancel">Cancelar</string>
+    <string name="history_details_when">%1$s às %2$s</string>
+    <string name="history_details_reason">Motivo</string>
+    <string name="history_copy">Copiar número</string>
+    <string name="history_copied">Número copiado</string>
+    <string name="history_delete">Excluir registro</string>
 </resources>

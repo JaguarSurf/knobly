@@ -9,6 +9,8 @@ agp = "9.3.3"
 compose-multiplatform = "1.12.2"
 compose-material3 = "1.9.0"
 compose-hot-reload = "1.2.0"
+# KSP2 releases are independent of the Kotlin version; used by the Room compiler
+ksp = "2.3.13"
 
 # Android SDK
 android-compileSdk = "37"
@@ -113,6 +115,8 @@ compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-m
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-hot-reload = { id = "org.jetbrains.compose.hot-reload", version.ref = "compose-hot-reload" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+room = { id = "androidx.room", version.ref = "androidx-room" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 

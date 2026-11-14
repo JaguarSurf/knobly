@@ -47,6 +47,7 @@ include(":feature:onboarding")
 // Domain
 include(":domain:rules")
 include(":domain:stats")
+include(":domain:history")
 
 // Core
 include(":core:model")

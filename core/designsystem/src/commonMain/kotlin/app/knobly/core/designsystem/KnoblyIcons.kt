@@ -30,7 +30,7 @@ object KnoblyIcons {
 
     val Phone: ImageVector by lazy { strokeIcon("Phone", PHONE) }
 
-    val PhoneBlocked: ImageVector by lazy { strokeIcon("PhoneBlocked", PHONE, "M3 3l18 18") }
+    val PhoneBlocked: ImageVector by lazy { strokeIcon("PhoneBlocked", PHONE, "M21 3L3 21") }
 
     val Person: ImageVector by lazy { strokeIcon("Person", circle(12f, 8f, 4f), "M4 21c0-4 4-6 8-6s8 2 8 6") }
 
@@ -53,6 +53,12 @@ object KnoblyIcons {
     val Regex: ImageVector by lazy {
         strokeIcon("Regex", "M8 5c-3 3-3 11 0 14", "M16 5c3 3 3 11 0 14", "M12 8v6", "M9.5 9.5l5 3", "M14.5 9.5l-5 3")
     }
+
+    val Trash: ImageVector by lazy {
+        strokeIcon("Trash", "M4 7h16", "M10 11v6", "M14 11v6", "M6 7l1 13h10l1-13", "M9 7V4h6v3")
+    }
+
+    val Copy: ImageVector by lazy { strokeIcon("Copy", "M9 9h11v11H9z", "M5 15H4V4h11v1") }
 
     private const val PHONE =
         "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"

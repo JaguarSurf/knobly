@@ -8,6 +8,7 @@ import app.knobly.core.model.Action
 import app.knobly.core.model.Decision
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.phone.PhoneNumberNormalizer
+import app.knobly.domain.history.CallHistoryRecorder
 import app.knobly.domain.rules.call.CallScreener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,13 +23,17 @@ import kotlin.time.TimeSource
 /**
  * Called by the system for every incoming call; it must answer within a few seconds. The decision is made off the
  * main thread by [CallScreener] (in-memory rules + a contacts lookup), which lets the call through if anything is
- * slow. Nothing is written before answering.
+ * slow. Nothing is written before answering: rejected calls are stored in the history afterwards.
  */
 class KnoblyCallScreeningService :
     CallScreeningService(),
     KoinComponent {
     private val screener: CallScreener by inject()
     private val normalizer: PhoneNumberNormalizer by inject()
+    private val recorder: CallHistoryRecorder by inject()
+
+    // The process-wide scope: the history write must survive this service being unbound right after answering.
+    private val appScope: CoroutineScope by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onScreenCall(callDetails: Call.Details) {
@@ -44,7 +49,11 @@ class KnoblyCallScreeningService :
             val call = IncomingCall(number = normalizer.normalize(rawNumber), timestamp = Clock.System.now())
             val decision = screener.screen(call)
             respondToCall(callDetails, decision.toCallResponse())
-            // Spike-level logging only (no phone numbers); filtered calls are stored in the history in a later step.
+            appScope.launch(Dispatchers.IO) {
+                runCatching { recorder.record(call, decision) }
+                    .onFailure { Log.e(TAG, "Could not store the call in the history", it) }
+            }
+            // No phone numbers in the log.
             Log.i(
                 TAG,
                 "action=${decision.action} rule=${decision.matchedRule?.value} hidden=${call.number == null} " +
