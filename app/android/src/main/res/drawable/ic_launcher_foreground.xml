@@ -1,14 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder launcher icon: a knob (circle with a pointer). -->
+<!-- Knobly launcher icon, "Fader k" — same geometry as docs/design/knobly-icon-dark.svg (the chosen mockup).
+     Adaptive icon foreground on a 108dp canvas: the 96-unit design is scaled to 72dp and centered (the visible
+     icon area), so the glyph keeps the mockup's proportions and stays inside the 66dp safe zone.
+     The handle is drawn like the mockup: an accent disc (r=9) on a ring of the tile color (r=13) over the stem and
+     arms. The ring color equals the adaptive icon background (@color/ic_launcher_background). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,30a24,24 0,1 1,0 48a24,24 0,1 1,0 -48z" />
-    <path
-        android:fillColor="#00897B"
-        android:pathData="M51,34h6v20h-6z" />
+    <group
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        android:translateX="18"
+        android:translateY="18">
+        <path
+            android:pathData="M34,22L34,74M43,50L66,26M47,55L68,74"
+            android:strokeWidth="8"
+            android:strokeColor="#F2EFFF"
+            android:strokeLineCap="round" />
+        <path
+            android:fillColor="#1C1640"
+            android:pathData="M21,50a13,13 0,1 0,26 0a13,13 0,1 0,-26 0z" />
+        <path
+            android:fillColor="#6FE3C6"
+            android:pathData="M25,50a9,9 0,1 0,18 0a9,9 0,1 0,-18 0z" />
+    </group>
 </vector>

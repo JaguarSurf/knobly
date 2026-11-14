@@ -41,8 +41,9 @@ fun KnoblyMark(
         drawLine(stroke, p(34f, 22f), p(34f, 74f), width, StrokeCap.Round)
         drawLine(stroke, p(43f, 50f), p(66f, 26f), width, StrokeCap.Round)
         drawLine(stroke, p(47f, 55f), p(68f, 74f), width, StrokeCap.Round)
-        // The handle sits on a ring of the tile color, separating it from the stem and arms.
-        drawCircle(tile, radius = 15 * u, center = p(34f, 50f))
-        drawCircle(handle, radius = 11 * u, center = p(34f, 50f))
+        // The handle sits on a ring of the tile color, separating it from the stem and arms (as in the SVG source:
+        // a r=11 disc with a 4-unit tile-colored stroke, i.e. a visible r=9 disc on a r=13 ring).
+        drawCircle(tile, radius = 13 * u, center = p(34f, 50f))
+        drawCircle(handle, radius = 9 * u, center = p(34f, 50f))
     }
 }

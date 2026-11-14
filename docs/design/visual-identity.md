@@ -64,8 +64,15 @@ The "k" of Knobly whose stem is a fader, with the control handle where the arms 
 |---|---|
 | Dark (default launcher icon) | [knobly-icon-dark.svg](knobly-icon-dark.svg) |
 | Light | [knobly-icon-light.svg](knobly-icon-light.svg) |
+| Play Store (512 px, opaque) | [knobly-icon-playstore-512.png](knobly-icon-playstore-512.png) |
 
-Android: adaptive icon (background `#1C1640`, foreground glyph) plus a monochrome layer for themed icons. iOS: 1024 px asset generated from the dark variant.
+Where it is used:
+
+- **Android:** adaptive icon in `app/android/src/main/res/` — background color `ic_launcher_background` (`#1C1640`), foreground `drawable/ic_launcher_foreground.xml` and, for Android 13+ themed icons, `drawable/ic_launcher_monochrome.xml`. The 96-unit design is scaled to 72 dp on the 108 dp canvas so the glyph stays inside the 66 dp safe zone.
+- **iOS:** `iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png` (opaque, full-bleed; iOS applies the corner mask).
+- **In the app:** the `KnoblyMark` composable.
+
+All variants use the exact geometry of the SVG source (an accent disc of radius 9 on a tile-colored ring of radius 13, over the stem and arms). Only the monochrome layer differs: a themed icon only uses alpha, so there the stem and arms stop where the ring would start.
 
 ## Components
 
