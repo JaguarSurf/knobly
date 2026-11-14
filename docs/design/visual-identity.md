@@ -7,7 +7,7 @@ Knobly is a **control center for the phone**: calls first, then messages, notifi
 
 ## Principles
 
-- **Serene:** deep backgrounds, plenty of space, large radii (16–28 dp), no alarm red. Blocking a call is a good thing, not an error.
+- **Serene:** deep backgrounds, plenty of space, large radii (16–28 dp). Red is reserved for call outcomes (rejected calls) and errors, never for decoration.
 - **Control center:** every feature is a module with a status, a toggle and details. Toggles are always visible and take effect immediately.
 - **Precise with data:** tabular numbers, direct text, no decoration on permissions, history or numbers.
 - **Honest:** explain platform limits plainly; everything stays on the device.
@@ -44,6 +44,7 @@ By default the app follows the system setting (light/dark); the user can also pi
 | Secondary | `#6B645A` | Secondary text, inactive icons |
 | Active | `#5E8C4A` | "Active/protected" status dot |
 | Alert | `#C8553D` | Errors and alerts only |
+| Call rejected / answered / missed | `#C0392B` / `#3F7F3A` / `#A86A12` (dark theme: `#FF6B6B` / `#6EE7B7` / `#F5B860`) | Call outcome icons and bars (History, Statistics, Home): rejected red, answered green, missed amber |
 
 Colors must keep text contrast at 4.5:1 or more (3:1 for large text).
 

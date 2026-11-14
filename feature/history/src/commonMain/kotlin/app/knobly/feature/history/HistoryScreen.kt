@@ -287,9 +287,9 @@ internal fun OutcomeBadge(
     val c = KnoblyTheme.colors
     val (icon, tint) =
         when (outcome) {
-            CallOutcome.REJECTED -> KnoblyIcons.PhoneBlocked to c.accent
-            CallOutcome.ANSWERED -> KnoblyIcons.PhoneIncoming to c.textSoft
-            CallOutcome.MISSED -> KnoblyIcons.PhoneMissed to c.alert
+            CallOutcome.REJECTED -> KnoblyIcons.PhoneBlocked to c.callRejected
+            CallOutcome.ANSWERED -> KnoblyIcons.PhoneIncoming to c.callAnswered
+            CallOutcome.MISSED -> KnoblyIcons.PhoneMissed to c.callMissed
             CallOutcome.RANG -> KnoblyIcons.Phone to c.textSecondary
         }
     Box(

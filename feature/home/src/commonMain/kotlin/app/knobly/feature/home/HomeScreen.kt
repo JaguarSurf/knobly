@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -305,7 +307,17 @@ private fun LatestRejectionCard(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            KnoblyRoundIcon(KnoblyIcons.PhoneBlocked, highlighted = true)
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).background(c.glassStrong),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    KnoblyIcons.PhoneBlocked,
+                    contentDescription = null,
+                    tint = c.callRejected,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     latest.number ?: stringResource(Res.string.home_hidden_number),

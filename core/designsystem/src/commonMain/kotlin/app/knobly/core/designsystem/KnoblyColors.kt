@@ -45,6 +45,10 @@ data class KnoblyColors(
     val statusActive: Color,
     val statusInactive: Color,
     val alert: Color,
+    /** Call outcomes (History, Statistics, Home): rejected red, answered green, missed amber. */
+    val callRejected: Color,
+    val callAnswered: Color,
+    val callMissed: Color,
 )
 
 /** Dark theme "Noturno", mint accent. */
@@ -78,6 +82,9 @@ val DarkKnoblyColors =
         statusActive = Color(0xFF6EE7B7),
         statusInactive = Color(0xFF7D7799),
         alert = Color(0xFFFF8A7A),
+        callRejected = Color(0xFFFF6B6B),
+        callAnswered = Color(0xFF6EE7B7),
+        callMissed = Color(0xFFF5B860),
     )
 
 /** Light theme "Pedra", sage accent. */
@@ -111,6 +118,9 @@ val LightKnoblyColors =
         statusActive = Color(0xFF5E8C4A),
         statusInactive = Color(0xFFA39C90),
         alert = Color(0xFFC8553D),
+        callRejected = Color(0xFFC0392B),
+        callAnswered = Color(0xFF3F7F3A),
+        callMissed = Color(0xFFA86A12),
     )
 
 internal val LocalKnoblyColors = staticCompositionLocalOf { DarkKnoblyColors }

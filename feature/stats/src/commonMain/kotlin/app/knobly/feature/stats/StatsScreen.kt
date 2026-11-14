@@ -19,7 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -161,18 +161,19 @@ private fun ChartCard(
 /** Answered, missed, "received" (outcome unknown) and rejected calls of the period. */
 @Composable
 private fun ByTypeCard(stats: CallStats) {
+    val c = KnoblyTheme.colors
     val totals = stats.totals
     val rows =
         buildList {
-            add(stringResource(CallCategory.ANSWERED.title) to totals.answered)
-            add(stringResource(CallCategory.MISSED.title) to totals.missed)
-            if (totals.rang > 0) add(stringResource(Res.string.stats_type_rang) to totals.rang)
-            add(stringResource(CallCategory.REJECTED.title) to totals.rejected)
+            add(Triple(stringResource(CallCategory.ANSWERED.title), totals.answered, c.callAnswered))
+            add(Triple(stringResource(CallCategory.MISSED.title), totals.missed, c.callMissed))
+            if (totals.rang > 0) add(Triple(stringResource(Res.string.stats_type_rang), totals.rang, c.textSecondary))
+            add(Triple(stringResource(CallCategory.REJECTED.title), totals.rejected, c.callRejected))
         }
     val max = rows.maxOf { it.second }.coerceAtLeast(1)
     GlassCard(Modifier.fillMaxWidth().testTag(StatsTestTags.BY_TYPE)) {
         CardTitle(stringResource(Res.string.stats_by_type))
-        rows.forEach { (label, count) -> BarRow(label, count, count.toFloat() / max) }
+        rows.forEach { (label, count, color) -> BarRow(label, count, count.toFloat() / max, color) }
     }
 }
 
@@ -190,7 +191,7 @@ private fun ByFilterCard(byFilter: List<FilterCount>) {
             )
         }
         val max = byFilter.maxOfOrNull { it.count } ?: 1
-        byFilter.forEach { item -> BarRow(item.filter.text(), item.count, item.count.toFloat() / max) }
+        byFilter.forEach { item -> BarRow(item.filter.text(), item.count, item.count.toFloat() / max, c.callRejected) }
     }
 }
 
@@ -237,6 +238,7 @@ private fun BarRow(
     label: String,
     count: Int,
     fraction: Float,
+    color: Color,
 ) {
     val c = KnoblyTheme.colors
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -258,7 +260,7 @@ private fun BarRow(
                         .fillMaxWidth(fraction)
                         .height(6.dp)
                         .clip(shape)
-                        .background(Brush.horizontalGradient(listOf(c.toggleOn, c.accent))),
+                        .background(color),
                 )
             }
         }
