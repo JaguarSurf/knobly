@@ -26,7 +26,7 @@ Agents may use Git commands only to read repository state, such as `git status`,
 - Koin for dependency injection
 - kotlinx-datetime, kotlinx-serialization
 - libphonenumber (Android and JVM) / PhoneNumberKit (iOS) via `expect/actual` for number normalization
-- Vico (multiplatform) for charts
+- Charts drawn with Compose Canvas in the design system (`KnoblyLineChart`), no chart library
 - WorkManager (Android) / BGTaskScheduler (iOS) for periodic tasks
 - Compose Hot Reload for fast UI iteration on the desktop harness
 - Tests: kotlin.test, Turbine, Compose UI tests (`runComposeUiTest`), Roborazzi (screenshot tests), Robolectric
@@ -115,4 +115,4 @@ Notes for agents:
 
 ## Current status
 
-Phase: **Android MVP**. The app has four tabs (Início, Filtros, Histórico, Estatísticas) in pt-BR and English, the design system and the launcher icon. The Filters tab implements [specs/call-filters.md](docs/specs/call-filters.md): the call screening role card, "contacts only" (with the `READ_CONTACTS` flow), and custom rules (prefix, exact number, hidden number, regex) persisted as JSON and screened by `CallScreener` in the `CallScreeningService`. The History tab ([specs/call-history.md](docs/specs/call-history.md)) lists rejected calls stored in Room (`:core:database`, `:domain:history`) for 1 year. Statistics is still a placeholder. See [roadmap.md](docs/roadmap.md).
+Phase: **Android MVP**. The app has four tabs (Início, Filtros, Histórico, Estatísticas) in pt-BR and English, the design system and the launcher icon. The Filters tab implements [specs/call-filters.md](docs/specs/call-filters.md): the call screening role card, "contacts only" (with the `READ_CONTACTS` flow), and custom rules (prefix, exact number, hidden number, regex) persisted as JSON and screened by `CallScreener` in the `CallScreeningService`. The History tab ([specs/call-history.md](docs/specs/call-history.md)) lists rejected calls stored in Room (`:core:database`, `:domain:history`) for 3 years. The Statistics tab ([specs/call-statistics.md](docs/specs/call-statistics.md)) charts them per hour, day, week, month and year, and Home shows today's and the last 7 days' rejections plus the latest one. See [roadmap.md](docs/roadmap.md).

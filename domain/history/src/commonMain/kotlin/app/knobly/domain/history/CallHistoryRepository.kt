@@ -8,6 +8,12 @@ interface CallHistoryRepository {
     /** Newest first. */
     val calls: Flow<List<RejectedCall>>
 
+    /** The most recent call, if any (Home). */
+    val latest: Flow<RejectedCall?>
+
+    /** The calls at or after [instant], newest first (statistics). */
+    fun callsSince(instant: Instant): Flow<List<RejectedCall>>
+
     /** Stores [call] (its [RejectedCall.id] is ignored and assigned by the store). */
     suspend fun add(call: RejectedCall)
 

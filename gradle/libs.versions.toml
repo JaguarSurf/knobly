@@ -33,7 +33,6 @@ kotlinx-coroutines = "1.11.0"
 kotlinx-datetime = "0.8.0"
 kotlinx-serialization = "1.13.0"
 libphonenumber = "9.0.43"
-vico = "2.5.2"
 
 # Testing
 junit4 = "4.13.2"
@@ -88,7 +87,6 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumber" }
 
 # Charts
-vico-multiplatform = { module = "com.patrykandpatrick.vico:multiplatform", version.ref = "vico" }
 
 # Testing
 junit4 = { module = "junit:junit", version.ref = "junit4" }

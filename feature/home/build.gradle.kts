@@ -6,6 +6,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.domain.rules)
+            implementation(projects.domain.stats)
             implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {

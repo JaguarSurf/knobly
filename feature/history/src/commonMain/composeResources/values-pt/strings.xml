@@ -30,7 +30,7 @@
     <string name="history_rule_exact">Número exato</string>
     <string name="history_rule_hidden">Número oculto</string>
     <string name="history_rule_regex">Expressão regular %1$s</string>
-    <string name="history_footer">O histórico fica só neste aparelho e é guardado por 1 ano.</string>
+    <string name="history_footer">O histórico fica só neste aparelho e é guardado por 3 anos.</string>
     <string name="history_empty_title">Nenhuma chamada rejeitada</string>
     <string name="history_empty_message">Quando o Knobly rejeitar uma chamada, ela aparece aqui.</string>
     <string name="history_empty_filter">Nenhuma chamada neste filtro.</string>

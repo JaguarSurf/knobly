@@ -2,6 +2,7 @@ package app.knobly.domain.history
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlin.time.Instant
 
@@ -16,6 +17,11 @@ class InMemoryCallHistoryRepository(
 
     /** The current calls (test assertions). */
     val value: List<RejectedCall> get() = state.value
+
+    override val latest: Flow<RejectedCall?> = state.map { it.firstOrNull() }
+
+    override fun callsSince(instant: Instant): Flow<List<RejectedCall>> =
+        state.map { calls -> calls.filter { it.timestamp >= instant } }
 
     override suspend fun add(call: RejectedCall) {
         state.update { (it + call.copy(id = nextId++)).sortedWith(newestFirst) }

@@ -113,12 +113,21 @@ class CallHistoryTest {
         }
 
     @Test
-    fun `calls older than one year are removed when a new one is recorded`() =
+    fun `calls older than three years are removed when a new one is recorded`() =
         runTest {
-            recorder.record(call("0303 111 1111", now - 366.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
-            recorder.record(call("0303 222 2222", now - 364.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
+            recorder.record(call("0303 111 1111", now - 1097.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
+            recorder.record(call("0303 222 2222", now - 1095.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
             recorder.record(call("0303 333 3333"), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
 
             assertEquals(listOf("03033333333", "03032222222"), history.calls.first().map { it.number?.raw })
+        }
+
+    @Test
+    fun `calls since an instant`() =
+        runTest {
+            recorder.record(call("0303 111 1111", now - 2.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
+            recorder.record(call("0303 222 2222", now - 1.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
+
+            assertEquals(listOf("03032222222"), history.callsSince(now - 1.days).first().map { it.number?.raw })
         }
 }

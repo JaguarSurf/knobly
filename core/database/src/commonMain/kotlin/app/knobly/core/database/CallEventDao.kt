@@ -14,6 +14,13 @@ interface CallEventDao {
     @Query("SELECT * FROM call_events ORDER BY timestamp_utc DESC, id DESC")
     fun observeAll(): Flow<List<CallEventEntity>>
 
+    @Query("SELECT * FROM call_events ORDER BY timestamp_utc DESC, id DESC LIMIT 1")
+    fun observeLatest(): Flow<CallEventEntity?>
+
+    /** Events at or after [timestampUtc] (epoch milliseconds), newest first. */
+    @Query("SELECT * FROM call_events WHERE timestamp_utc >= :timestampUtc ORDER BY timestamp_utc DESC, id DESC")
+    fun observeSince(timestampUtc: Long): Flow<List<CallEventEntity>>
+
     @Query("DELETE FROM call_events WHERE id = :id")
     suspend fun delete(id: Long)
 

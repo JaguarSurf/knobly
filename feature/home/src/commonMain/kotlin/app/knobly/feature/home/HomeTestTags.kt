@@ -4,4 +4,6 @@ package app.knobly.feature.home
 object HomeTestTags {
     const val CALLS_TILE = "home.callsTile"
     const val ENABLE_CALL_FILTERING = "home.enableCallFiltering"
+    const val STATS = "home.stats"
+    const val LATEST_REJECTION = "home.latestRejection"
 }

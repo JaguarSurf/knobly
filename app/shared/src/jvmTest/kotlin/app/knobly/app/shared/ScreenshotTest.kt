@@ -6,6 +6,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -138,7 +139,44 @@ class ScreenshotTest {
         )
 
     @Test
-    fun stats() = screenshot("stats", tab = "tab.stats")
+    fun statsEmpty() = screenshot("stats-empty", tab = "tab.stats")
+
+    @Test
+    fun stats() = screenshot("stats", tab = "tab.stats", history = SampleHistory.longHistory)
+
+    @Test
+    fun statsDark() = screenshot("stats-dark", tab = "tab.stats", history = SampleHistory.longHistory, dark = true)
+
+    @Test
+    fun statsHourDark() =
+        screenshot("stats-hour-dark", tab = "tab.stats", history = SampleHistory.longHistory, dark = true) {
+            onNodeWithText("Hora").performClick()
+        }
+
+    @Test
+    fun statsWeek() =
+        screenshot("stats-week", tab = "tab.stats", history = SampleHistory.longHistory) {
+            onNodeWithText("Semana").performClick()
+        }
+
+    @Test
+    fun statsMonth() =
+        screenshot("stats-month", tab = "tab.stats", history = SampleHistory.longHistory) {
+            onNodeWithText("Mês").performClick()
+        }
+
+    @Test
+    fun statsYearDark() =
+        screenshot("stats-year-dark", tab = "tab.stats", history = SampleHistory.longHistory, dark = true) {
+            onNodeWithText("Ano").performClick()
+        }
+
+    @Test
+    fun homeActivity() = screenshot("home-activity", settings = SAMPLE, history = SampleHistory.calls)
+
+    @Test
+    fun homeActivityDark() =
+        screenshot("home-activity-dark", settings = SAMPLE, history = SampleHistory.calls, dark = true)
 
     private companion object {
         const val PHONE_WIDTH = 412

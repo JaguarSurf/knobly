@@ -24,4 +24,11 @@
         <item quantity="one">%1$d filtro ativo</item>
         <item quantity="other">%1$d filtros ativos</item>
     </plurals>
+    <string name="home_stat_today">hoje</string>
+    <string name="home_stat_week">em 7 dias</string>
+    <string name="home_latest_today">Rejeitada hoje às %1$s</string>
+    <string name="home_latest_yesterday">Rejeitada ontem às %1$s</string>
+    <string name="home_latest_date">Rejeitada em %1$d/%2$d às %3$s</string>
+    <string name="home_hidden_number">Número oculto</string>
+    <string name="home_open_history">Abrir histórico</string>
 </resources>

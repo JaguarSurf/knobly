@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
@@ -24,6 +25,7 @@ import app.knobly.feature.history.HistoryFilter
 import app.knobly.feature.history.HistoryTestTags
 import app.knobly.feature.home.HomeTestTags
 import app.knobly.feature.onboarding.CallFilteringTestTags
+import app.knobly.feature.stats.StatsTestTags
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -54,7 +56,7 @@ class AppTest {
 
             onNodeWithTag("tab.stats").performClick()
             onNodeWithTag("tab.stats").assertIsSelected()
-            onNodeWithText("Gráficos das chamadas filtradas", substring = true).assertIsDisplayed()
+            onNodeWithTag(StatsTestTags.TOTAL).assertTextContains("nos últimos 7 dias", substring = true)
         }
 
     @Test
@@ -226,6 +228,42 @@ class AppTest {
             assertTrue(env.history.value.isEmpty())
             onNodeWithText("Nenhuma chamada rejeitada").assertIsDisplayed()
             onNodeWithTag(HistoryTestTags.CLEAR).assertDoesNotExist()
+        }
+
+    @Test
+    fun `statistics show the rejected calls of each period`() =
+        runComposeUiTest {
+            startTestKoin(roleHeld = true, history = SampleHistory.calls)
+            setContent { App() }
+            onNodeWithTag("tab.stats").performClick()
+
+            // Last 7 days: all 7 sample calls; 4 rejected by contacts only, 2 by Telemarketing.
+            onNodeWithTag(
+                StatsTestTags.TOTAL,
+            ).assertTextContains("7").assertTextContains("rejeitadas nos últimos 7 dias")
+            onNodeWithText("Fora dos contatos").assertIsDisplayed()
+            onNodeWithText("Telemarketing · 0303").assertIsDisplayed()
+
+            onNodeWithText("Hora").performClick()
+            // Last 24 hours: 13:32, 11:05, 09:47 today and 19:10, 15:22 yesterday.
+            onNodeWithTag(
+                StatsTestTags.TOTAL,
+            ).assertTextContains("5").assertTextContains("rejeitadas nas últimas 24 horas")
+        }
+
+    @Test
+    fun `home shows today's rejections and opens the latest in history`() =
+        runComposeUiTest {
+            startTestKoin(roleHeld = true, history = SampleHistory.calls)
+            setContent { App() }
+
+            onAllNodesWithTag(HomeTestTags.STATS)[0].assertTextContains("3 hoje")
+            onAllNodesWithTag(HomeTestTags.STATS)[1].assertTextContains("7 em 7 dias")
+            onNodeWithTag(HomeTestTags.LATEST_REJECTION).performScrollTo()
+            onNodeWithText("Rejeitada hoje às 13:32").assertIsDisplayed()
+
+            onNodeWithTag(HomeTestTags.LATEST_REJECTION).performClick()
+            onNodeWithTag("tab.history").assertIsSelected()
         }
 
     private fun ComposeUiTest.textField(tag: String) = onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag(tag)))

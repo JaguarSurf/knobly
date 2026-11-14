@@ -40,4 +40,22 @@ internal object SampleHistory {
             call(6, 1.days + 3.hours + 52.minutes, "03035550101", telemarketing),
             call(7, 5.days, "11987654321"),
         )
+
+    /**
+     * About a year and a half of rejected calls (deterministic, ~1-4 a day, busier in the morning and afternoon),
+     * for the Statistics screenshots. Ends at [TEST_NOW].
+     */
+    val longHistory: List<RejectedCall> =
+        (0 until 540).flatMap { daysAgo ->
+            val perDay = 1 + (daysAgo * 7 + daysAgo / 30) % 4
+            (0 until perDay).map { index ->
+                val rule = listOf(null, telemarketing, null, donations, collector, telemarketing)[(daysAgo + index) % 6]
+                call(
+                    id = daysAgo * 10L + index + 100,
+                    ago = daysAgo.days + (1 + (index * 5 + daysAgo) % 9).hours + (index * 13).minutes,
+                    raw = if (rule == null) "1198765${(4321 + daysAgo) % 10000}" else "03031234567",
+                    rule = rule,
+                )
+            }
+        }
 }

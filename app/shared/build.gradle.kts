@@ -17,6 +17,7 @@ kotlin {
         commonMain.dependencies {
             api(projects.domain.rules)
             api(projects.domain.history)
+            api(projects.domain.stats)
             implementation(libs.kotlinx.datetime)
             implementation(projects.core.designsystem)
             implementation(projects.feature.home)

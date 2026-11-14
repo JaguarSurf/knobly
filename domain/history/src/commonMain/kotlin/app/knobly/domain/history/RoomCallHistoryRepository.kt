@@ -15,6 +15,11 @@ class RoomCallHistoryRepository(
 ) : CallHistoryRepository {
     override val calls: Flow<List<RejectedCall>> = dao.observeAll().map { events -> events.map { it.toRejectedCall() } }
 
+    override val latest: Flow<RejectedCall?> = dao.observeLatest().map { it?.toRejectedCall() }
+
+    override fun callsSince(instant: Instant): Flow<List<RejectedCall>> =
+        dao.observeSince(instant.toEpochMilliseconds()).map { events -> events.map { it.toRejectedCall() } }
+
     override suspend fun add(call: RejectedCall) {
         dao.insert(call.toEntity())
     }

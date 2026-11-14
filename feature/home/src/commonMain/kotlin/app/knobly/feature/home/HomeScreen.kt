@@ -1,5 +1,6 @@
 package app.knobly.feature.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,6 +48,7 @@ import app.knobly.core.designsystem.KnoblyPrimaryButton
 import app.knobly.core.designsystem.KnoblyRoundIcon
 import app.knobly.core.designsystem.KnoblyStatus
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.core.designsystem.poppinsFamily
 import app.knobly.feature.home.resources.Res
 import app.knobly.feature.home.resources.home_active_filters
 import app.knobly.feature.home.resources.home_calls
@@ -61,39 +64,42 @@ import app.knobly.feature.home.resources.home_greeting_evening
 import app.knobly.feature.home.resources.home_greeting_morning
 import app.knobly.feature.home.resources.home_headline_end
 import app.knobly.feature.home.resources.home_headline_start
+import app.knobly.feature.home.resources.home_hidden_number
+import app.knobly.feature.home.resources.home_latest_date
+import app.knobly.feature.home.resources.home_latest_today
+import app.knobly.feature.home.resources.home_latest_yesterday
 import app.knobly.feature.home.resources.home_module_messages
 import app.knobly.feature.home.resources.home_module_notifications
 import app.knobly.feature.home.resources.home_more_controls
 import app.knobly.feature.home.resources.home_open_calls
+import app.knobly.feature.home.resources.home_open_history
+import app.knobly.feature.home.resources.home_stat_today
+import app.knobly.feature.home.resources.home_stat_week
 import app.knobly.feature.home.resources.home_status_no_filters
 import app.knobly.feature.home.resources.home_status_off
 import app.knobly.feature.home.resources.home_status_protected
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Clock
 
 /** The control center: status of each module (calls for now) and the way into its controls. */
 @Composable
 fun HomeScreen(
     onOpenCalls: () -> Unit,
+    onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val callsStatus by viewModel.callsStatus.collectAsStateWithLifecycle()
-    val hour =
-        Clock.System
-            .now()
-            .toLocalDateTime(TimeZone.currentSystemDefault())
-            .hour
+    val activity by viewModel.activity.collectAsStateWithLifecycle()
     HomeContent(
-        dayPart = DayPart.fromHour(hour),
+        dayPart = viewModel.dayPart,
         isCallFilteringAvailable = viewModel.isCallFilteringAvailable,
         callsStatus = callsStatus,
+        activity = activity,
         onEnableCallFiltering = viewModel::enableCallFiltering,
         onOpenCalls = onOpenCalls,
+        onOpenHistory = onOpenHistory,
         modifier = modifier,
     )
 }
@@ -103,8 +109,10 @@ fun HomeContent(
     dayPart: DayPart,
     isCallFilteringAvailable: Boolean,
     callsStatus: CallsStatus,
+    activity: CallsActivity,
     onEnableCallFiltering: () -> Unit,
     onOpenCalls: () -> Unit,
+    onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val c = KnoblyTheme.colors
@@ -141,7 +149,7 @@ fun HomeContent(
             )
         }
 
-        CallsHeroCard(isCallFilteringAvailable, callsStatus, onEnableCallFiltering)
+        CallsHeroCard(isCallFilteringAvailable, callsStatus, activity, onEnableCallFiltering)
 
         Text(
             stringResource(Res.string.home_controls),
@@ -175,6 +183,8 @@ fun HomeContent(
                 MoreControlsTile(Modifier.weight(1f))
             }
         }
+
+        activity.latest?.let { LatestRejectionCard(it, onOpenHistory) }
     }
 }
 
@@ -182,6 +192,7 @@ fun HomeContent(
 private fun CallsHeroCard(
     isAvailable: Boolean,
     status: CallsStatus,
+    activity: CallsActivity,
     onEnable: () -> Unit,
 ) {
     val c = KnoblyTheme.colors
@@ -211,6 +222,12 @@ private fun CallsHeroCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = c.textSecondary,
                 )
+                if (status.screeningOn) {
+                    Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StatPill(activity.today, stringResource(Res.string.home_stat_today))
+                        StatPill(activity.lastSevenDays, stringResource(Res.string.home_stat_week))
+                    }
+                }
             }
             KnoblyFaders(active = status.isProtected)
         }
@@ -219,6 +236,89 @@ private fun CallsHeroCard(
                 text = stringResource(Res.string.home_calls_enable),
                 onClick = onEnable,
                 modifier = Modifier.fillMaxWidth().padding(top = 16.dp).testTag(HomeTestTags.ENABLE_CALL_FILTERING),
+            )
+        }
+    }
+}
+
+/** "3 hoje": a number of rejected calls in a small glass pill. */
+@Composable
+private fun StatPill(
+    count: Int,
+    label: String,
+) {
+    val c = KnoblyTheme.colors
+    Text(
+        buildAnnotatedString {
+            withStyle(SpanStyle(fontFamily = poppinsFamily(), fontWeight = FontWeight.SemiBold, color = c.text)) {
+                append(count.toString())
+            }
+            append(" ")
+            append(label)
+        },
+        style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
+        color = c.textSoft,
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(c.glass)
+                .padding(horizontal = 10.dp, vertical = 6.dp)
+                .testTag(HomeTestTags.STATS),
+    )
+}
+
+/** The latest rejected call, opening the History tab (Home mockup). */
+@Composable
+private fun LatestRejectionCard(
+    latest: LatestRejection,
+    onOpenHistory: () -> Unit,
+) {
+    val c = KnoblyTheme.colors
+    val openHistory = stringResource(Res.string.home_open_history)
+    GlassCard(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
+            .clickable(onClickLabel = openHistory, role = Role.Button, onClick = onOpenHistory)
+            .testTag(HomeTestTags.LATEST_REJECTION),
+        cornerRadius = 22.dp,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            KnoblyRoundIcon(KnoblyIcons.PhoneBlocked, highlighted = true)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    latest.number ?: stringResource(Res.string.home_hidden_number),
+                    style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"),
+                )
+                Text(
+                    when (latest.daysAgo) {
+                        0 -> {
+                            stringResource(Res.string.home_latest_today, latest.time)
+                        }
+
+                        1 -> {
+                            stringResource(Res.string.home_latest_yesterday, latest.time)
+                        }
+
+                        else -> {
+                            stringResource(
+                                Res.string.home_latest_date,
+                                latest.date.day,
+                                latest.date.month.ordinal + 1,
+                                latest.time,
+                            )
+                        }
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                )
+            }
+            Icon(
+                KnoblyIcons.ChevronRight,
+                contentDescription = null,
+                tint = c.textSecondary,
+                modifier = Modifier.size(18.dp),
             )
         }
     }
@@ -321,8 +421,10 @@ private fun HomeContentPreview() {
                 dayPart = DayPart.EVENING,
                 isCallFilteringAvailable = true,
                 callsStatus = CallsStatus(screeningOn = true, activeFilterCount = 2),
+                activity = CallsActivity(today = 3, lastSevenDays = 23),
                 onEnableCallFiltering = {},
                 onOpenCalls = {},
+                onOpenHistory = {},
             )
         }
     }

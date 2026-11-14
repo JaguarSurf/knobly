@@ -112,7 +112,12 @@ private fun MainScaffold(modifier: Modifier = Modifier) {
             startDestination = HomeRoute,
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
-            composable<HomeRoute> { HomeScreen(onOpenCalls = { navigateTo(TopLevelDestination.FILTERS) }) }
+            composable<HomeRoute> {
+                HomeScreen(
+                    onOpenCalls = { navigateTo(TopLevelDestination.FILTERS) },
+                    onOpenHistory = { navigateTo(TopLevelDestination.HISTORY) },
+                )
+            }
             composable<FiltersRoute> {
                 // The app layer composes features: the call filtering card (:feature:onboarding) sits on top of the
                 // Filters tab (:feature:calls) while filtering is off. Features never depend on each other.

@@ -8,11 +8,13 @@ import app.knobly.domain.rules.call.CallFilterSettingsRepository
 import app.knobly.domain.rules.call.CallRulesProvider
 import app.knobly.domain.rules.call.CallScreener
 import app.knobly.domain.rules.call.SCREENING_DISPATCHER
+import app.knobly.domain.stats.CallStatistics
 import app.knobly.feature.calls.FiltersViewModel
 import app.knobly.feature.calls.RuleEditorViewModel
 import app.knobly.feature.history.HistoryViewModel
 import app.knobly.feature.home.HomeViewModel
 import app.knobly.feature.onboarding.CallFilteringViewModel
+import app.knobly.feature.stats.StatsViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +42,7 @@ val sharedModule: Module =
         single { CallFilterSettingsRepository(get()) }
         single<CallHistoryRepository> { RoomCallHistoryRepository(get<KnoblyDatabase>().callEvents()) }
         single { CallHistoryRecorder(get(), get<CallFilterSettingsRepository>().settings, get()) }
+        single { CallStatistics(get(), get()) { get<TimeZone>() } }
         single { CallRulesProvider(get<CallFilterSettingsRepository>().settings, get(), get()) }
         single {
             CallScreener(
@@ -54,6 +57,7 @@ val sharedModule: Module =
         viewModelOf(::FiltersViewModel)
         viewModel { (ruleId: String?) -> RuleEditorViewModel(ruleId, get(), get()) }
         viewModelOf(::HistoryViewModel)
+        viewModelOf(::StatsViewModel)
     }
 
 /** Every Koin module of the app: the shared graph plus the [platformModule] (real adapters, or fakes). */

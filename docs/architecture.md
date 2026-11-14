@@ -80,11 +80,11 @@ flowchart TD
 | `:core:designsystem` | Theme, colors, typography, reusable components |
 | `:domain:rules` | Rule engine: evaluation, ordering, caching, rule repository |
 | `:domain:history` | Rejected calls: repository on the database, recorder (rule snapshot, 1-year retention) |
-| `:domain:stats` | Statistics use cases (aggregation by period) |
+| `:domain:stats` | Statistics of rejected calls: buckets per period in the local time zone, counts per filter, Home summary |
 | `:feature:home` | Control center (the **Início** tab): status of each module and the way into its controls; future modules (messages, notifications) appear here |
 | `:feature:calls` | Screens to create, edit, reorder and enable call rules |
 | `:feature:history` | The **Histórico** tab: rejected calls by day, filters, details sheet, clear history |
-| `:feature:stats` | Charts and dashboards |
+| `:feature:stats` | The **Estatísticas** tab: period selector, total and line chart, counts per filter |
 | `:feature:settings` | General settings, backup, import/export |
 | `:feature:onboarding` | Call filtering setup: the "Call filtering is off" card (shown in the Filters tab by `:app:shared`) that requests the call screening role; on iOS, guides the user to the native features |
 | `:platform:android-screening` | `CallScreeningService` + block notifications |
@@ -198,11 +198,11 @@ sequenceDiagram
 
 ## Data and statistics
 
-Table `call_events` (only rejected calls for now, see [specs/call-history.md](specs/call-history.md)): `id`, `timestamp_utc` (indexed), `number_raw`, `number_e164`, `number_national`, `action`, `reason`, `matched_rule_id`, and a snapshot of the rule (`rule_type`, `rule_value`, `rule_label`). Retention: 1 year, applied when a call is recorded.
+Table `call_events` (only rejected calls for now, see [specs/call-history.md](specs/call-history.md)): `id`, `timestamp_utc` (indexed), `number_raw`, `number_e164`, `number_national`, `action`, `reason`, `matched_rule_id`, and a snapshot of the rule (`rule_type`, `rule_value`, `rule_label`). Retention: 3 years, applied when a call is recorded.
 
 Each platform module builds the `KnoblyDatabase` (Android: app database path; desktop harness: temp dir; iOS: documents) with `buildKnoblyDatabase()`; UI tests replace the history with `InMemoryCallHistoryRepository`.
 
-Statistics are computed through SQL aggregation (`GROUP BY` over hour, day, week, month and year buckets, converted to the local time zone). If the volume grows, a WorkManager job can maintain a pre-aggregated table.
+Statistics (`:domain:stats`, `CallStatistics`) read the calls of the selected window and aggregate them in memory, in the local time zone (hour, day, week, month and year buckets; see [specs/call-statistics.md](specs/call-statistics.md)). Three years of rejected calls are a few thousand rows, so SQL aggregation is not needed; if the volume grows, a pre-aggregated table can be added.
 
 ## Testing strategy
 

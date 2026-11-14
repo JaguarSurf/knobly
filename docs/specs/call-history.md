@@ -17,7 +17,7 @@ Show the user which calls Knobly rejected, so filters can be trusted and adjuste
 ## Retention and privacy
 
 - Kept **only on the device** (Room database `knobly.db`), like everything else in Knobly. No backup or export yet.
-- Entries older than **1 year** are deleted automatically whenever a new call is recorded. One year covers the yearly statistics (see [roadmap.md](../roadmap.md)).
+- Entries older than **3 years** are deleted automatically whenever a new call is recorded. Three years feed the yearly statistics ([call-statistics.md](call-statistics.md)).
 - The user can delete one entry or **clear the whole history** (with a confirmation).
 
 ## History tab
@@ -30,7 +30,7 @@ Follows the approved mockup:
 - Numbers are formatted for display: national format for Brazilian numbers (`(11) 91234-5678`, `0303 123 4567`, also `0304 765 4321`, which libphonenumber does not accept as valid), international format for other countries.
 - Tapping an entry opens a **details sheet**: number, full date and time, reason, **Copiar número** (not for hidden numbers) and **Excluir registro**.
 - Empty states: no rejected calls yet; no calls for the selected filter.
-- Footer: "O histórico fica só neste aparelho e é guardado por 1 ano."
+- Footer: "O histórico fica só neste aparelho e é guardado por 3 anos."
 
 ## Out of scope (for now)
 

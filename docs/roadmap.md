@@ -17,14 +17,14 @@ Emulator results (Android 17 / API 37, 2026-11-14): the role request dialog gran
 
 ## 2. Android MVP
 
-- [ ] Module structure (see [architecture.md](architecture.md))
+- [x] Module structure (see [architecture.md](architecture.md))
 - [x] Call filtering setup: request the call screening role and the contacts permission (from the Filters tab)
 - [ ] Rules: contacts only, exact number (block list), regex, prefix (0303/0304), hidden number (done, see [specs/call-filters.md](specs/call-filters.md)); allow list
 - [ ] Actions: reject (done), silence, allow
 - [x] History tab (see [specs/call-history.md](specs/call-history.md))
-- [ ] Statistics tab (hour, day, week, month, year)
-- [ ] Tests for the rule engine and phone number normalization
-- [ ] CI with build, tests, Detekt and ktlint
+- [x] Statistics tab (hour, day, week, month, year; see [specs/call-statistics.md](specs/call-statistics.md))
+- [x] Tests for the rule engine and phone number normalization
+- [x] CI with build, tests, Detekt and ktlint (manual and pull requests for now)
 - [ ] Release on the Play Store and F-Droid
 
 ## 3. v1.1

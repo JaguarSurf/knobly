@@ -51,7 +51,7 @@ class CallHistoryRecorder(
     }
 
     companion object {
-        /** How long rejected calls are kept (docs/specs/call-history.md). */
-        val RETENTION: Duration = 365.days
+        /** How long rejected calls are kept: 3 years, covering the yearly statistics (docs/specs/call-history.md). */
+        val RETENTION: Duration = (3 * 365 + 1).days
     }
 }
