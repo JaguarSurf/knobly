@@ -1,7 +1,9 @@
 import app.knobly.buildlogic.libs
 import app.knobly.buildlogic.library
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
@@ -17,6 +19,12 @@ class KmpComposeConventionPlugin : Plugin<Project> {
             pluginManager.apply("org.jetbrains.compose.hot-reload")
 
             extensions.configure<KotlinMultiplatformExtension> {
+                // Compose Multiplatform resources (fonts, strings) are packaged as Android resources/assets; the AGP 9
+                // KMP library plugin leaves them disabled by default, which would ship an APK without them.
+                (this as ExtensionAware).extensions.configure<KotlinMultiplatformAndroidLibraryTarget>("android") {
+                    androidResources { enable = true }
+                }
+
                 sourceSets.getByName("commonMain").dependencies {
                     implementation(libs.library("compose-runtime"))
                     implementation(libs.library("compose-foundation"))

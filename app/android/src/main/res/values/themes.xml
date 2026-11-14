@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window theme only (the UI is Compose). DayNight follows the system light/dark setting, and the window
+         background matches KnoblyBackground so there is no flash of the wrong color at startup. -->
+    <style name="Theme.Knobly" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

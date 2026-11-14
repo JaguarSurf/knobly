@@ -19,5 +19,7 @@ style:
     # Layout values (dp, sp, colors) in Compose code are not magic numbers.
     ignoreAnnotated: ['Composable', 'Preview']
     ignorePropertyDeclaration: true
+    # Enum entries are named constants already (e.g. GlowPosition.TopEnd(0.85f, 0.12f)).
+    ignoreEnums: true
   UnusedPrivateMember:
     ignoreAnnotated: ['Preview']

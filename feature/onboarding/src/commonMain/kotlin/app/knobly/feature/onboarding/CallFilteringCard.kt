@@ -2,11 +2,8 @@ package app.knobly.feature.onboarding
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +13,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.knobly.core.designsystem.GlassCard
+import app.knobly.core.designsystem.KnoblyPrimaryButton
+import app.knobly.core.designsystem.KnoblyStatus
 import app.knobly.core.designsystem.KnoblyTheme
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -47,26 +47,33 @@ fun CallFilteringCardContent(
 ) {
     if (isRoleHeld) return
 
-    Card(
+    val c = KnoblyTheme.colors
+    GlassCard(
         modifier = modifier.fillMaxWidth().testTag(CallFilteringTestTags.CARD),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        cornerRadius = 26.dp,
+        contentPadding = PaddingValues(20.dp),
     ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Call filtering is off", style = MaterialTheme.typography.titleMedium)
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            KnoblyStatus("Off", active = false)
+            Text("Call filtering is off", style = MaterialTheme.typography.titleLarge, color = c.text)
             if (isRoleAvailable) {
                 Text(
                     "To apply your filters, allow Knobly to check incoming calls before they ring. " +
                         "Your phone app stays the same, and everything stays on this device.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = c.textSoft,
                 )
-                Button(onClick = onEnable, modifier = Modifier.testTag(CallFilteringTestTags.ENABLE)) {
-                    Text("Enable call filtering")
-                }
+                KnoblyPrimaryButton(
+                    text = "Enable call filtering",
+                    onClick = onEnable,
+                    modifier = Modifier.fillMaxWidth().testTag(CallFilteringTestTags.ENABLE),
+                )
             } else {
                 Text(
                     "To block calls on iPhone, enable Knobly in " +
                         "Settings > Apps > Phone > Call Blocking & Identification.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = c.textSoft,
                 )
             }
         }

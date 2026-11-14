@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- Knobly app icon, concept A "Fader k" (dark theme). Source asset: see docs/design/visual-identity.md -->
+  <rect width="96" height="96" rx="26" fill="#1C1640"/>
+  <line x1="34" y1="22" x2="34" y2="74" stroke="#F2EFFF" stroke-width="8" stroke-linecap="round"/>
+  <line x1="43" y1="50" x2="66" y2="26" stroke="#F2EFFF" stroke-width="8" stroke-linecap="round"/>
+  <line x1="47" y1="55" x2="68" y2="74" stroke="#F2EFFF" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="34" cy="50" r="11" fill="#6FE3C6" stroke="#1C1640" stroke-width="4"/>
+</svg>

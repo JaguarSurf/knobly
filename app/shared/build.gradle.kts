@@ -24,7 +24,6 @@ kotlin {
             implementation(projects.feature.onboarding)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
-            implementation(libs.compose.material.icons.core)
             implementation(libs.kotlinx.serialization.json)
             api(libs.koin.core)
             implementation(libs.koin.compose)

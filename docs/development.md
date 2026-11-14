@@ -190,6 +190,7 @@ The app opens on the tabs. While call filtering is off, the **Filters** tab show
 | One module | `./gradlew :domain:rules:jvmTest`, `./gradlew :core:phone:jvmTest` |
 | UI tests (desktop, headless) | `./gradlew :app:shared:jvmTest` |
 | Screenshots (Roborazzi) | `./gradlew :app:shared:recordRoborazziJvm` → `app/shared/build/outputs/roborazzi/*.png` |
+| Design system catalog (light + dark) | `./gradlew :core:designsystem:recordRoborazziJvm` → `core/designsystem/build/outputs/roborazzi/` |
 | Fix formatting | `./gradlew ktlintFormat` |
 | Detekt only | `./gradlew detekt` |
 | iOS tests (macOS only) | `./gradlew iosSimulatorArm64Test` |

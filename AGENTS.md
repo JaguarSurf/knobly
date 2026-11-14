@@ -46,6 +46,7 @@ Apps → features → domain → core, with dependencies always pointing downwar
 - **Domain without platform dependencies:** no `android.*` or iOS APIs in `:domain:*` and `:core:model`.
 - **Platform capabilities behind ports:** contacts, the call screening role, permissions and incoming calls are accessed only through interfaces (ports) defined in the domain. Real adapters live in `:platform:*`; fakes are adapters too and live in `:platform:fake`. `:feature:*` modules never call platform APIs directly, not even to request a permission.
 - **Every shared library must support Android, iOS and JVM.** Otherwise the desktop harness and the JVM tests break.
+- **Visual identity:** UI follows [docs/design/visual-identity.md](docs/design/visual-identity.md) (dark "Noturno" with mint accent, light "Pedra", Poppins + Inter, "Fader k" icon). Feature behavior follows the specs in `docs/specs/`.
 - **UI changes come with tests:** a Compose UI test and/or a Roborazzi screenshot for new or changed screens.
 - **Every new filter rule** is an implementation of `Rule` + a UI form; do not change the engine to add a type.
 - **Tests are mandatory** for the rule engine and for number normalization (Brazilian cases: +55, DDD area codes, 9th digit, hidden number, 0303/0304).
@@ -79,6 +80,7 @@ Always use the Gradle wrapper. Full guide: [development.md](docs/development.md)
 ./gradlew check                             # JVM + Android host tests, UI tests, Detekt, ktlint, Android lint
 ./gradlew ktlintFormat                      # fix formatting
 ./gradlew :app:shared:recordRoborazziJvm    # screenshots -> app/shared/build/outputs/roborazzi/*.png (open them to review UI)
+./gradlew :core:designsystem:recordRoborazziJvm  # design system catalog, light + dark -> core/designsystem/build/outputs/roborazzi/
 
 # Run without a phone
 ./gradlew :app:desktop:run                  # desktop harness (X11) with the incoming call simulator

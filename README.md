@@ -31,8 +31,14 @@ Early stage: **technical spike**. See the [roadmap](docs/roadmap.md).
 - [Architecture](docs/architecture.md)
 - [Android vs iOS](docs/platforms.md)
 - [Roadmap](docs/roadmap.md)
+- [Visual identity](docs/design/visual-identity.md)
+- [Call filters spec](docs/specs/call-filters.md)
 - [Development guide](docs/development.md): build, run without a phone, install on a phone
 - [Architecture Decision Records](docs/adr/)
+
+## Third-party assets
+
+Fonts: [Poppins](https://github.com/itfoundry/Poppins) and [Inter](https://github.com/rsms/inter), both under the SIL Open Font License 1.1 (see [docs/licenses/fonts](docs/licenses/fonts/)).
 
 ## License
 
