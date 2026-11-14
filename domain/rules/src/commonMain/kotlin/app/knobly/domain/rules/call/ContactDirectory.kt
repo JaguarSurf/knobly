@@ -3,6 +3,7 @@ package app.knobly.domain.rules.call
 import app.knobly.core.model.PhoneNumber
 import app.knobly.core.phone.PhoneNumberMatching
 import app.knobly.core.phone.PhoneNumberNormalizer
+import app.knobly.domain.port.ContactNumber
 import app.knobly.domain.port.ContactsAccess
 import app.knobly.domain.rules.ContactLookup
 import kotlinx.coroutines.CoroutineDispatcher
@@ -10,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.concurrent.Volatile
 
 /**
@@ -43,7 +45,18 @@ class ContactDirectory(
         }
     }
 
-    override fun isContact(number: PhoneNumber): Boolean = isAvailable && index().contains(number)
+    override fun isContact(number: PhoneNumber): Boolean = isAvailable && index().find(number) != null
+
+    /** The contact names of [numbers] (History), for the numbers that are saved. Reads the contacts if they changed. */
+    suspend fun names(numbers: Collection<PhoneNumber>): Map<PhoneNumber, String> =
+        if (!isAvailable || numbers.isEmpty()) {
+            emptyMap()
+        } else {
+            withContext(dispatcher) {
+                val index = index()
+                numbers.distinct().mapNotNull { number -> index.find(number)?.name?.let { number to it } }.toMap()
+            }
+        }
 
     private fun warmUp() {
         if (isAvailable) scope.launch(dispatcher) { index() }
@@ -63,20 +76,24 @@ class ContactDirectory(
 
 /** Contact numbers by their last 8 digits; candidates are parsed only when a call has the same ending. */
 internal class ContactIndex(
-    numbers: List<String>,
+    numbers: List<ContactNumber>,
     private val normalizer: PhoneNumberNormalizer,
 ) {
-    private val byKey: Map<String, List<String>> =
+    private val byKey: Map<String, List<ContactNumber>> =
         numbers
-            .map(::dialableDigits)
-            .filter { it.isNotEmpty() }
+            .map { it.copy(number = dialableDigits(it.number)) }
+            .filter { it.number.isNotEmpty() }
             .distinct()
-            .groupBy(PhoneNumberMatching::indexKey)
+            .groupBy { PhoneNumberMatching.indexKey(it.number) }
 
-    fun contains(number: PhoneNumber): Boolean =
-        byKey[PhoneNumberMatching.indexKey(number.national)].orEmpty().any { saved ->
-            normalizer.normalize(saved)?.let { PhoneNumberMatching.sameNumber(number, it) } ?: false
-        }
+    /** The saved entry for [number], if any (preferring one with a name). */
+    fun find(number: PhoneNumber): ContactNumber? =
+        byKey[PhoneNumberMatching.indexKey(number.national)]
+            .orEmpty()
+            .filter { saved ->
+                normalizer.normalize(saved.number)?.let { PhoneNumberMatching.sameNumber(number, it) }
+                    ?: false
+            }.maxByOrNull { !it.name.isNullOrBlank() }
 
     private companion object {
         /** `+55 (35) 8123-4567 ramal 12` -> `+553581234567`: digits up to an extension, pause or wait. */

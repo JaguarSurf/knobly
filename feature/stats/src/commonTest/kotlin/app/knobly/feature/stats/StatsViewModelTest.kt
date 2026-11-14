@@ -1,13 +1,18 @@
 package app.knobly.feature.stats
 
 import app.knobly.core.model.PhoneNumber
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallOutcomeResolver
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.InMemoryCallHistoryRepository
-import app.knobly.domain.history.RejectedCall
 import app.knobly.domain.history.RejectionReason
+import app.knobly.domain.stats.CallCategory
 import app.knobly.domain.stats.CallStatistics
 import app.knobly.domain.stats.StatsPeriod
+import app.knobly.platform.fake.FakeCallLogAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -17,6 +22,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -37,25 +43,61 @@ class StatsViewModelTest {
 
     private suspend fun reject(at: String) =
         history.add(
-            RejectedCall(
+            CallRecord(
                 0,
                 Instant.parse(at),
                 PhoneNumber("03031234567", null, "3031234567"),
+                CallOutcome.REJECTED,
                 RejectionReason.CONTACTS_ONLY,
             ),
         )
+
+    private fun TestScope.viewModel() =
+        StatsViewModel(
+            CallStatistics(history, clock) { zone },
+            CallOutcomeResolver(history, callLog, { null }, clock, UnconfinedTestDispatcher(testScheduler)),
+        )
+
+    private val callLog = FakeCallLogAccess(granted = false)
+
+    @Test
+    fun `categories switch the chart and calls that only rang offer the call log`() =
+        runTest {
+            reject("2026-11-14T15:00:00Z")
+            history.add(CallRecord(0, Instant.parse("2026-11-14T16:00:00Z"), null, CallOutcome.RANG))
+            val viewModel = viewModel()
+            assertEquals(
+                2,
+                viewModel.state.value.stats
+                    ?.totals
+                    ?.of(CallCategory.ALL),
+            )
+            assertTrue(viewModel.state.value.askCallLog)
+
+            viewModel.setCategory(CallCategory.REJECTED)
+            assertEquals(CallCategory.REJECTED, viewModel.state.value.category)
+            assertEquals(
+                1,
+                viewModel.state.value.stats
+                    ?.buckets
+                    ?.last()
+                    ?.counts
+                    ?.of(CallCategory.REJECTED),
+            )
+        }
 
     @Test
     fun `opens on the last 7 days and switches periods`() =
         runTest {
             reject("2026-11-14T15:00:00Z")
             reject("2026-10-20T15:00:00Z")
-            val viewModel = StatsViewModel(CallStatistics(history, clock) { zone })
+            val viewModel = viewModel()
 
             assertEquals(StatsPeriod.DAY, viewModel.state.value.period)
             assertEquals(
                 1,
                 viewModel.state.value.stats
+                    ?.totals
                     ?.total,
             )
             assertEquals(
@@ -74,6 +116,7 @@ class StatsViewModelTest {
             assertEquals(
                 2,
                 viewModel.state.value.stats
+                    ?.totals
                     ?.total,
             )
         }
@@ -81,10 +124,11 @@ class StatsViewModelTest {
     @Test
     fun `new calls update the statistics`() =
         runTest {
-            val viewModel = StatsViewModel(CallStatistics(history, clock) { zone })
+            val viewModel = viewModel()
             assertEquals(
                 0,
                 viewModel.state.value.stats
+                    ?.totals
                     ?.total,
             )
 
@@ -93,6 +137,7 @@ class StatsViewModelTest {
             assertEquals(
                 1,
                 viewModel.state.value.stats
+                    ?.totals
                     ?.total,
             )
         }

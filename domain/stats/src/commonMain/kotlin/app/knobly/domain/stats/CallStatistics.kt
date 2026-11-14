@@ -1,7 +1,8 @@
 package app.knobly.domain.stats
 
 import app.knobly.domain.history.CallHistoryRepository
-import app.knobly.domain.history.RejectedCall
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.RejectionReason
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -21,8 +22,9 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 
 /**
- * Statistics of the rejected calls, computed from the history in the local time zone (so days, weeks and DST follow
- * the phone's clock). A few thousand calls per year at most: they are aggregated in memory, not in SQL.
+ * Statistics of the incoming calls (rejected, answered, missed), computed from the history in the local time zone
+ * (so days, weeks and DST follow the phone's clock). A few thousand calls per year at most: they are aggregated in
+ * memory, not in SQL.
  */
 class CallStatistics(
     private val history: CallHistoryRepository,
@@ -42,14 +44,21 @@ class CallStatistics(
         }
 
     fun summary(): Flow<CallsSummary> =
-        combine(stats(StatsPeriod.DAY), history.latest) { days, latest ->
-            CallsSummary(today = days.buckets.last().count, lastSevenDays = days.total, latest = latest)
+        combine(stats(StatsPeriod.DAY), history.latestRejected) { days, latest ->
+            CallsSummary(
+                rejectedToday =
+                    days.buckets
+                        .last()
+                        .counts.rejected,
+                rejectedLastSevenDays = days.totals.rejected,
+                latestRejected = latest,
+            )
         }
 
     private fun aggregate(
         period: StatsPeriod,
         buckets: List<LocalDateTime>,
-        calls: List<RejectedCall>,
+        calls: List<CallRecord>,
         zone: TimeZone,
     ): CallStats {
         val window = buckets.toSet()
@@ -64,20 +73,20 @@ class CallStatistics(
         val inWindow = calls.filter { bucketOf(period, it.timestamp.toLocalDateTime(zone)) in window }
         return CallStats(
             period = period,
-            total = inWindow.size,
-            buckets = buckets.map { StatsBucket(it, byBucket[it]?.size ?: 0) },
-            byFilter = byFilter(inWindow),
+            totals = CallCounts.of(inWindow),
+            buckets = buckets.map { StatsBucket(it, CallCounts.of(byBucket[it].orEmpty())) },
+            byFilter = byFilter(inWindow.filter { it.outcome == CallOutcome.REJECTED }),
         )
     }
 
     /** Calls are newest first, so the first call of each rule carries its most recent label. */
-    private fun byFilter(calls: List<RejectedCall>): List<FilterCount> =
+    private fun byFilter(calls: List<CallRecord>): List<FilterCount> =
         calls
             .groupBy { call ->
                 when (call.reason) {
                     RejectionReason.CONTACTS_ONLY -> FilterKey.ContactsOnly
                     RejectionReason.CUSTOM_RULE -> call.rule?.let { FilterKey.Rule(it.id) } ?: FilterKey.Deleted
-                    RejectionReason.UNKNOWN -> FilterKey.Deleted
+                    RejectionReason.UNKNOWN, null -> FilterKey.Deleted
                 }
             }.map { (key, group) ->
                 val filter =

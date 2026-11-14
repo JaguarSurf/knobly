@@ -2,13 +2,21 @@ package app.knobly.feature.history
 
 import app.knobly.core.model.PhoneNumber
 import app.knobly.core.phone.PhoneNumberNormalizer
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallOutcomeResolver
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.InMemoryCallHistoryRepository
-import app.knobly.domain.history.RejectedCall
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.history.RuleSnapshot
+import app.knobly.domain.port.CallLogEntry
+import app.knobly.domain.port.ContactNumber
+import app.knobly.domain.rules.call.ContactDirectory
 import app.knobly.domain.rules.call.CustomRuleType
+import app.knobly.platform.fake.FakeCallLogAccess
+import app.knobly.platform.fake.FakeContactsAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -34,7 +42,12 @@ class HistoryViewModelTest {
             override fun now() = now
         }
     private val timeZone = TimeZone.of("America/Sao_Paulo")
-    private val normalizer = PhoneNumberNormalizer { null }
+
+    /** Digits only: enough to match the fake contacts by their exact digits. */
+    private val normalizer =
+        PhoneNumberNormalizer { raw ->
+            raw?.filter(Char::isDigit)?.let { PhoneNumber(it, null, it) }
+        }
     private val tm = RuleSnapshot("tm", CustomRuleType.PREFIX, "0303", "Telemarketing")
 
     private fun call(
@@ -42,13 +55,21 @@ class HistoryViewModelTest {
         at: String,
         reason: RejectionReason,
         raw: String? = "03031234567",
-    ) = RejectedCall(
+    ) = CallRecord(
         id = id,
         timestamp = Instant.parse(at),
         number = raw?.let { PhoneNumber(it, null, it) },
+        outcome = CallOutcome.REJECTED,
         reason = reason,
         rule = tm.takeIf { reason == RejectionReason.CUSTOM_RULE },
     )
+
+    private fun allowed(
+        id: Long,
+        at: String,
+        outcome: CallOutcome,
+        raw: String = "11912345678",
+    ) = CallRecord(id, Instant.parse(at), PhoneNumber(raw, null, raw), outcome)
 
     private val history =
         InMemoryCallHistoryRepository(
@@ -64,7 +85,20 @@ class HistoryViewModelTest {
             ),
         )
 
-    private fun viewModel() = HistoryViewModel(history, normalizer, clock, timeZone)
+    private val contacts = FakeContactsAccess(listOf(ContactNumber("11912345678", "Maria")))
+    private val callLog = FakeCallLogAccess(granted = false, grantOnRequest = false)
+
+    private fun TestScope.viewModel(): HistoryViewModel {
+        val dispatcher = UnconfinedTestDispatcher(testScheduler)
+        return HistoryViewModel(
+            history = history,
+            contacts = ContactDirectory(contacts, normalizer, backgroundScope, dispatcher),
+            outcomes = CallOutcomeResolver(history, callLog, normalizer, clock, dispatcher),
+            normalizer = normalizer,
+            clock = clock,
+            timeZone = timeZone,
+        )
+    }
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -97,24 +131,56 @@ class HistoryViewModelTest {
         }
 
     @Test
-    fun `filters split contacts only from rules`() =
+    fun `filters by outcome and contact names`() =
         runTest {
+            history.add(allowed(0, "2026-11-14T15:00:00Z", CallOutcome.ANSWERED))
+            history.add(allowed(0, "2026-11-14T15:30:00Z", CallOutcome.MISSED, raw = "21987654321"))
             val viewModel = viewModel()
 
-            viewModel.setFilter(HistoryFilter.CONTACTS_ONLY)
-            assertEquals(
-                listOf(2L, 3L),
+            fun ids() =
                 viewModel.state.value.days
-                    .flatMap { day -> day.entries.map { it.id } },
-            )
+                    .flatMap { day -> day.entries.map { it.id } }
 
-            viewModel.setFilter(HistoryFilter.RULES)
+            assertEquals(6, ids().size)
+            viewModel.setFilter(HistoryFilter.ANSWERED)
+            assertEquals(listOf(5L), ids())
             assertEquals(
-                listOf(1L, 4L),
+                "Maria",
                 viewModel.state.value.days
-                    .flatMap { day -> day.entries.map { it.id } },
+                    .single()
+                    .entries
+                    .single()
+                    .name,
             )
-            assertEquals(4, viewModel.state.value.totalCount)
+            viewModel.setFilter(HistoryFilter.MISSED)
+            assertEquals(listOf(6L), ids())
+            assertNull(
+                viewModel.state.value.days
+                    .single()
+                    .entries
+                    .single()
+                    .name,
+            )
+            viewModel.setFilter(HistoryFilter.REJECTED)
+            assertEquals(listOf(1L, 2L, 3L, 4L), ids())
+            assertEquals(6, viewModel.state.value.totalCount)
+        }
+
+    @Test
+    fun `calls that only rang offer the call log permission`() =
+        runTest {
+            history.add(allowed(0, "2026-11-14T15:00:00Z", CallOutcome.RANG))
+            val viewModel = viewModel()
+            assertEquals(CallLogPrompt.ASK, viewModel.state.value.callLogPrompt)
+
+            viewModel.allowCallLog()
+            assertEquals(CallLogPrompt.DENIED, viewModel.state.value.callLogPrompt)
+
+            callLog.grantOnRequest = true
+            callLog.log(CallLogEntry("11912345678", Instant.parse("2026-11-14T15:00:05Z"), answered = true))
+            viewModel.allowCallLog()
+            assertEquals(CallLogPrompt.NONE, viewModel.state.value.callLogPrompt)
+            assertEquals(CallOutcome.ANSWERED, history.value.first().outcome)
         }
 
     @Test

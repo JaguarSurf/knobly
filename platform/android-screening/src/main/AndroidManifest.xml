@@ -2,8 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Contacts always pass, and "contacts only" rejects everyone else. Requested by the app when the user turns a
-         filter on; never READ_CALL_LOG. -->
+         filter on. -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- Optional, only read: whether the calls that rang were answered or missed (History, Statistics). Requested
+         from those tabs; never written. -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
 
     <application>
         <!-- Woken up by the system for every incoming call once Knobly holds ROLE_CALL_SCREENING (API 29+).

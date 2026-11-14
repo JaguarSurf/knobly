@@ -6,13 +6,15 @@ import app.knobly.core.datastore.InMemoryDocumentStoreFactory
 import app.knobly.core.phone.LibPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.history.CallHistoryRepository
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.InMemoryCallHistoryRepository
-import app.knobly.domain.history.RejectedCall
+import app.knobly.domain.port.CallLogAccess
 import app.knobly.domain.port.ContactsAccess
 import app.knobly.domain.port.ScreeningRoleController
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.settings.AppSettings
 import app.knobly.domain.settings.ThemeMode
+import app.knobly.platform.fake.FakeCallLogAccess
 import app.knobly.platform.fake.FakeContactsAccess
 import app.knobly.platform.fake.FakeScreeningRoleController
 import kotlinx.coroutines.Dispatchers
@@ -49,8 +51,9 @@ internal fun startTestKoin(
     roleHeld: Boolean,
     contactsGranted: Boolean = true,
     settings: CallFilterSettings = CallFilterSettings(),
-    history: List<RejectedCall> = emptyList(),
+    history: List<CallRecord> = emptyList(),
     themeMode: ThemeMode = ThemeMode.SYSTEM,
+    callLogGranted: Boolean = true,
 ): TestEnv {
     Dispatchers.setMain(UnconfinedTestDispatcher())
     Locale.setDefault(Locale.forLanguageTag("pt-BR"))
@@ -61,6 +64,7 @@ internal fun startTestKoin(
             settings = InMemoryDocumentStore(settings),
             history = InMemoryCallHistoryRepository(history),
             appSettings = InMemoryDocumentStore(AppSettings(themeMode)),
+            callLog = FakeCallLogAccess(granted = callLogGranted),
         )
     startKoin {
         modules(
@@ -68,6 +72,7 @@ internal fun startTestKoin(
                 module {
                     single { env.role } bind ScreeningRoleController::class
                     single { env.contacts } bind ContactsAccess::class
+                    single { env.callLog } bind CallLogAccess::class
                     single<PhoneNumberNormalizer> { LibPhoneNumberNormalizer() }
                     single<DocumentStoreFactory> {
                         InMemoryDocumentStoreFactory(

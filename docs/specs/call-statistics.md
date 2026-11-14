@@ -5,13 +5,13 @@
 
 ## Goal
 
-Show how many calls Knobly rejected over time and which filters did the work, so the user sees the value of the filters at a glance.
+Show how many calls the phone received over time, how they ended (answered, missed, rejected by Knobly) and which filters did the work, so the user sees the value of the filters at a glance.
 
 ## Data
 
-- Computed from the call history ([call-history.md](call-history.md)), which keeps rejected calls for **3 years**. Nothing else is stored.
+- Computed from the call history ([call-history.md](call-history.md)), which keeps every incoming call Knobly screened for **3 years**. Nothing else is stored.
 - Aggregated in the phone's **local time zone** (days, weeks and daylight saving time follow the phone's clock). A call at 23:30 local time counts on that day, even if it is already the next day in UTC.
-- Updated live: a call rejected while the tab is open shows up immediately.
+- Updated live: a call screened while the tab is open shows up immediately.
 
 ## Statistics tab
 
@@ -28,15 +28,18 @@ Follows the approved mockup:
   | Ano | last 5 years | 5 years | `2026` |
 
   With 3 years of history, the oldest years of the **Ano** view are empty.
-- **Total** of rejected calls in the window ("18 rejeitadas nos últimos 7 dias") and a smooth line chart with one point per bucket. Labels that would overlap are skipped at a regular step, always keeping the current bucket. Screen readers get the total and the period.
-- **Por filtro**: rejected calls of the window per filter, most first, with a bar relative to the largest: "Fora dos contatos", each custom rule ("Telemarketing · 0303", or "Começa com 0304" without a nickname; named as on its latest rejection) and "Regras excluídas".
+- Category chips: **Todas** (default: every incoming call), **Atendidas**, **Perdidas** and **Rejeitadas**. They switch the total and the chart.
+- **Total** of the selected category in the window ("42 chamadas nos últimos 7 dias", "3 perdidas nas últimas 24 horas") and a smooth line chart with one point per bucket. Labels that would overlap are skipped at a regular step, always keeping the current bucket. Screen readers get the total and the period.
+- When some calls only "rang" (outcome unknown) and the call log cannot be read, a card offers the permission, as in History.
+- **Por tipo**: answered, missed, "Recebidas (sem detalhe)" (only when there are any) and rejected calls of the window, with bars.
+- **Rejeitadas por filtro** (with Todas or Rejeitadas): rejected calls of the window per filter, most first, with a bar relative to the largest: "Fora dos contatos", each custom rule ("Telemarketing · 0303", or "Começa com 0304" without a nickname; named as on its latest rejection) and "Regras excluídas".
 - Empty window: total 0, a flat line, and "Nenhuma chamada rejeitada neste período."
 
 ## Home (control center)
 
 As in the Home mockup:
 
-- While call filtering is on, the calls card shows "**N** hoje" and "**N** em 7 dias".
+- While call filtering is on, the calls card shows "**N** rejeitadas hoje" and "**N** rejeitadas em 7 dias" (Home is about the filters, so it counts rejections only).
 - The latest rejected call (number, "Rejeitada hoje/ontem às 14:32" or the date), opening the History tab.
 
 ## Implementation notes

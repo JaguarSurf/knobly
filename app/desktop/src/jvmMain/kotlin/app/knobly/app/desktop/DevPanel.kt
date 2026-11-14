@@ -28,11 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.core.model.Action
 import app.knobly.core.model.Decision
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.history.CallHistoryRecorder
+import app.knobly.domain.history.CallOutcomeResolver
+import app.knobly.domain.port.CallLogEntry
 import app.knobly.domain.rules.call.CallScreener
+import app.knobly.platform.fake.FakeCallLogAccess
 import app.knobly.platform.fake.FakeContactsAccess
 import app.knobly.platform.fake.FakeScreeningRoleController
 import kotlinx.coroutines.launch
@@ -55,6 +59,9 @@ fun DevPanel(modifier: Modifier = Modifier) {
     val contacts = koinInject<FakeContactsAccess>()
     val screener = koinInject<CallScreener>()
     val recorder = koinInject<CallHistoryRecorder>()
+    val callLog = koinInject<FakeCallLogAccess>()
+    val outcomes = koinInject<CallOutcomeResolver>()
+    var answer by remember { mutableStateOf(true) }
     val normalizer = koinInject<PhoneNumberNormalizer>()
     val scope = rememberCoroutineScope()
     val roleHeld by roleController.isRoleHeld.collectAsState()
@@ -70,6 +77,11 @@ fun DevPanel(modifier: Modifier = Modifier) {
             val decision = screener.screen(call)
             calls.add(0, SimulatedCall(raw ?: "(hidden)", call, decision))
             recorder.record(call, decision)
+            // The fake "system call log": calls that rang were answered or missed, as chosen in the panel.
+            if (decision.action != Action.REJECT) {
+                callLog.log(CallLogEntry(raw, call.timestamp, answered = answer))
+                outcomes.resolvePending()
+            }
         }
     }
 
@@ -84,6 +96,13 @@ fun DevPanel(modifier: Modifier = Modifier) {
                 ) {
                     Switch(checked = roleHeld, onCheckedChange = roleController::setRoleHeld)
                     Text("Call screening role held (fake)")
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Switch(checked = answer, onCheckedChange = { answer = it })
+                    Text(if (answer) "Calls that ring are answered" else "Calls that ring are missed")
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

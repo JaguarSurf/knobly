@@ -9,6 +9,7 @@ import app.knobly.core.model.Decision
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.history.CallHistoryRecorder
+import app.knobly.domain.history.CallOutcomeResolver
 import app.knobly.domain.rules.call.CallScreener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,7 @@ class KnoblyCallScreeningService :
     private val screener: CallScreener by inject()
     private val normalizer: PhoneNumberNormalizer by inject()
     private val recorder: CallHistoryRecorder by inject()
+    private val resolver: CallOutcomeResolver by inject()
 
     // The process-wide scope: the history write must survive this service being unbound right after answering.
     private val appScope: CoroutineScope by inject()
@@ -50,8 +52,11 @@ class KnoblyCallScreeningService :
             val decision = screener.screen(call)
             respondToCall(callDetails, decision.toCallResponse())
             appScope.launch(Dispatchers.IO) {
-                runCatching { recorder.record(call, decision) }
-                    .onFailure { Log.e(TAG, "Could not store the call in the history", it) }
+                runCatching {
+                    recorder.record(call, decision)
+                    // Earlier calls that rang have ended by now: learn from the call log whether they were answered.
+                    resolver.resolvePending()
+                }.onFailure { Log.e(TAG, "Could not store the call in the history", it) }
             }
             // No phone numbers in the log.
             Log.i(

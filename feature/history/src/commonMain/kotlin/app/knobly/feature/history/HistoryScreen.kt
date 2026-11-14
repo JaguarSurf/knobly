@@ -34,17 +34,26 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.knobly.core.designsystem.GlassCard
 import app.knobly.core.designsystem.KnoblyChip
 import app.knobly.core.designsystem.KnoblyIcons
+import app.knobly.core.designsystem.KnoblyPrimaryButton
+import app.knobly.core.designsystem.KnoblySecondaryButton
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.domain.history.CallOutcome
 import app.knobly.feature.history.resources.Res
+import app.knobly.feature.history.resources.history_call_log_allow
+import app.knobly.feature.history.resources.history_call_log_denied
+import app.knobly.feature.history.resources.history_call_log_message
+import app.knobly.feature.history.resources.history_call_log_title
 import app.knobly.feature.history.resources.history_clear
 import app.knobly.feature.history.resources.history_empty_filter
 import app.knobly.feature.history.resources.history_empty_message
 import app.knobly.feature.history.resources.history_empty_title
 import app.knobly.feature.history.resources.history_filter_all
-import app.knobly.feature.history.resources.history_filter_contacts
-import app.knobly.feature.history.resources.history_filter_rules
+import app.knobly.feature.history.resources.history_filter_answered
+import app.knobly.feature.history.resources.history_filter_missed
+import app.knobly.feature.history.resources.history_filter_rejected
 import app.knobly.feature.history.resources.history_footer
 import app.knobly.feature.history.resources.history_hidden_number
+import app.knobly.feature.history.resources.history_open_settings
 import app.knobly.feature.history.resources.history_subtitle
 import app.knobly.feature.history.resources.history_title
 import org.jetbrains.compose.resources.stringResource
@@ -62,6 +71,8 @@ fun HistoryScreen(
         onFilterChange = viewModel::setFilter,
         onEntryClick = viewModel::select,
         onClearClick = viewModel::requestClear,
+        onAllowCallLog = viewModel::allowCallLog,
+        onOpenCallLogSettings = viewModel::openCallLogSettings,
         modifier = modifier,
     )
     state.selected?.let { entry ->
@@ -83,6 +94,8 @@ fun HistoryContent(
     onEntryClick: (Long) -> Unit,
     onClearClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onAllowCallLog: () -> Unit = {},
+    onOpenCallLogSettings: () -> Unit = {},
 ) {
     val c = KnoblyTheme.colors
     LazyColumn(
@@ -104,6 +117,9 @@ fun HistoryContent(
         }
 
         item(key = "filters") { Filters(state.filter, onFilterChange) }
+        if (state.callLogPrompt != CallLogPrompt.NONE) {
+            item(key = "call-log") { CallLogCard(state.callLogPrompt, onAllowCallLog, onOpenCallLogSettings) }
+        }
         if (state.days.isEmpty()) {
             item(
                 key = "empty-filter",
@@ -190,8 +206,9 @@ private fun Filters(
                     stringResource(
                         when (filter) {
                             HistoryFilter.ALL -> Res.string.history_filter_all
-                            HistoryFilter.CONTACTS_ONLY -> Res.string.history_filter_contacts
-                            HistoryFilter.RULES -> Res.string.history_filter_rules
+                            HistoryFilter.ANSWERED -> Res.string.history_filter_answered
+                            HistoryFilter.MISSED -> Res.string.history_filter_missed
+                            HistoryFilter.REJECTED -> Res.string.history_filter_rejected
                         },
                     ),
                 selected = filter == selected,
@@ -240,13 +257,18 @@ private fun EntryRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        BlockedBadge()
+        OutcomeBadge(entry.outcome)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            val number = entry.number ?: stringResource(Res.string.history_hidden_number)
             Text(
-                entry.number ?: stringResource(Res.string.history_hidden_number),
+                entry.name ?: number,
                 style = MaterialTheme.typography.titleSmall.copy(fontFeatureSettings = "tnum"),
             )
-            Text(entry.reasonText(), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+            Text(
+                if (entry.name != null) "${entry.statusText()} · $number" else entry.statusText(),
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textSecondary,
+            )
         }
         Text(
             entry.time,
@@ -256,14 +278,66 @@ private fun EntryRow(
     }
 }
 
+/** The call's icon: blocked (rejected), arrow in (answered), bouncing arrow (missed) or a plain phone (rang). */
 @Composable
-internal fun BlockedBadge(modifier: Modifier = Modifier) {
+internal fun OutcomeBadge(
+    outcome: CallOutcome,
+    modifier: Modifier = Modifier,
+) {
     val c = KnoblyTheme.colors
+    val (icon, tint) =
+        when (outcome) {
+            CallOutcome.REJECTED -> KnoblyIcons.PhoneBlocked to c.accent
+            CallOutcome.ANSWERED -> KnoblyIcons.PhoneIncoming to c.textSoft
+            CallOutcome.MISSED -> KnoblyIcons.PhoneMissed to c.alert
+            CallOutcome.RANG -> KnoblyIcons.Phone to c.textSecondary
+        }
     Box(
         modifier.size(40.dp).clip(CircleShape).background(c.glassStrong),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(KnoblyIcons.PhoneBlocked, contentDescription = null, tint = c.accent, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** Offers the call log permission, to tell the calls that rang apart (answered or missed). */
+@Composable
+private fun CallLogCard(
+    prompt: CallLogPrompt,
+    onAllow: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val c = KnoblyTheme.colors
+    GlassCard(Modifier.fillMaxWidth().testTag(HistoryTestTags.CALL_LOG), cornerRadius = 22.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(Res.string.history_call_log_title), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(
+                    if (prompt ==
+                        CallLogPrompt.DENIED
+                    ) {
+                        Res.string.history_call_log_denied
+                    } else {
+                        Res.string.history_call_log_message
+                    },
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textSecondary,
+            )
+            if (prompt == CallLogPrompt.DENIED) {
+                KnoblySecondaryButton(
+                    stringResource(Res.string.history_open_settings),
+                    onClick = onOpenSettings,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                KnoblyPrimaryButton(
+                    stringResource(Res.string.history_call_log_allow),
+                    onClick = onAllow,
+                    modifier = Modifier.fillMaxWidth().testTag(HistoryTestTags.CALL_LOG_ALLOW),
+                )
+            }
+        }
     }
 }
 
@@ -280,7 +354,7 @@ private fun EmptyCard(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (title != null) {
-                BlockedBadge()
+                OutcomeBadge(CallOutcome.RANG)
                 Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
             }
             Text(

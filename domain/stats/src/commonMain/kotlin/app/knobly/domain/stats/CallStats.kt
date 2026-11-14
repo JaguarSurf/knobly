@@ -1,22 +1,62 @@
 package app.knobly.domain.stats
 
-import app.knobly.domain.history.RejectedCall
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.RuleSnapshot
 import kotlinx.datetime.LocalDateTime
 
-/** Rejected calls of one [period]: total, one count per bucket (oldest first) and the share of each filter. */
+/** Incoming calls of one [period]: counts per category, one count per bucket (oldest first), rejections per filter. */
 data class CallStats(
     val period: StatsPeriod,
-    val total: Int,
+    val totals: CallCounts,
     val buckets: List<StatsBucket>,
-    /** Most rejections first. */
+    /** Rejected calls per filter, most first. */
     val byFilter: List<FilterCount>,
 )
+
+/** What a chart can show (docs/specs/call-statistics.md). */
+enum class CallCategory {
+    /** Every incoming call: rejected or not. */
+    ALL,
+    ANSWERED,
+    MISSED,
+    REJECTED,
+}
+
+/** Incoming calls by how they ended. [rang] are the calls that rang but whose outcome is unknown. */
+data class CallCounts(
+    val rejected: Int = 0,
+    val answered: Int = 0,
+    val missed: Int = 0,
+    val rang: Int = 0,
+) {
+    val total: Int get() = rejected + answered + missed + rang
+
+    fun of(category: CallCategory): Int =
+        when (category) {
+            CallCategory.ALL -> total
+            CallCategory.ANSWERED -> answered
+            CallCategory.MISSED -> missed
+            CallCategory.REJECTED -> rejected
+        }
+
+    companion object {
+        fun of(calls: List<CallRecord>): CallCounts {
+            val byOutcome = calls.groupingBy { it.outcome }.eachCount()
+            return CallCounts(
+                rejected = byOutcome[CallOutcome.REJECTED] ?: 0,
+                answered = byOutcome[CallOutcome.ANSWERED] ?: 0,
+                missed = byOutcome[CallOutcome.MISSED] ?: 0,
+                rang = byOutcome[CallOutcome.RANG] ?: 0,
+            )
+        }
+    }
+}
 
 /** [start] is local time: the hour for [StatsPeriod.HOUR], midnight of the first day otherwise. */
 data class StatsBucket(
     val start: LocalDateTime,
-    val count: Int,
+    val counts: CallCounts,
 )
 
 data class FilterCount(
@@ -37,9 +77,9 @@ sealed interface StatsFilter {
     data object DeletedRule : StatsFilter
 }
 
-/** What Home shows about calls: rejected today, in the last 7 days, and the latest one. */
+/** What Home shows: calls rejected today and in the last 7 days, and the latest rejected call. */
 data class CallsSummary(
-    val today: Int,
-    val lastSevenDays: Int,
-    val latest: RejectedCall?,
+    val rejectedToday: Int,
+    val rejectedLastSevenDays: Int,
+    val latestRejected: CallRecord?,
 )

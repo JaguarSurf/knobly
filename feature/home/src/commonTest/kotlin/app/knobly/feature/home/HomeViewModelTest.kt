@@ -3,8 +3,9 @@ package app.knobly.feature.home
 import app.cash.turbine.test
 import app.knobly.core.datastore.InMemoryDocumentStore
 import app.knobly.core.model.PhoneNumber
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.InMemoryCallHistoryRepository
-import app.knobly.domain.history.RejectedCall
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CallFilterSettingsRepository
@@ -95,10 +96,11 @@ class HomeViewModelTest {
             fun call(
                 id: Long,
                 at: String,
-            ) = RejectedCall(
+            ) = CallRecord(
                 id,
                 Instant.parse(at),
                 PhoneNumber("03031234567", null, "3031234567"),
+                CallOutcome.REJECTED,
                 RejectionReason.CONTACTS_ONLY,
             )
             val history =

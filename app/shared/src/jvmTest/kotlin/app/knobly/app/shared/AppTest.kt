@@ -54,7 +54,7 @@ class AppTest {
 
             onNodeWithTag("tab.history").performClick()
             onNodeWithTag("tab.history").assertIsSelected()
-            onNodeWithText("Nenhuma chamada rejeitada").assertIsDisplayed()
+            onNodeWithText("Nenhuma chamada ainda").assertIsDisplayed()
 
             onNodeWithTag("tab.stats").performClick()
             onNodeWithTag("tab.stats").assertIsSelected()
@@ -170,26 +170,46 @@ class AppTest {
         }
 
     @Test
-    fun `history lists rejected calls by day and filters them`() =
+    fun `history lists incoming calls by day and filters them by outcome`() =
         runComposeUiTest {
-            startTestKoin(roleHeld = true, history = SampleHistory.calls)
+            startTestKoin(roleHeld = true, history = SampleHistory.mixed)
             setContent { App() }
             onNodeWithTag("tab.history").performClick()
 
             onNodeWithText("HOJE").assertIsDisplayed()
             onNodeWithText("0303 123 4567").assertIsDisplayed()
             onNodeWithTag(HistoryTestTags.entry(1))
-                .assertTextContains("Telemarketing · começa com 0303")
+                .assertTextContains("Rejeitada · Telemarketing · começa com 0303")
                 .assertTextContains("13:32")
             onNodeWithText("Número oculto").assertIsDisplayed()
 
-            onNodeWithTag(HistoryTestTags.filter(HistoryFilter.RULES)).performClick()
-            onNodeWithText("Número oculto").assertDoesNotExist()
+            // Answered call from a contact: the name, then the status and the number.
+            onNodeWithTag(
+                HistoryTestTags.entry(20),
+            ).assertTextContains("Maria").assertTextContains("Atendida · (11) 91234-5678")
+            onNodeWithTag(HistoryTestTags.entry(22)).assertTextContains("Recebida")
+            onNodeWithTag(HistoryTestTags.CALL_LOG).assertDoesNotExist()
+
+            onNodeWithTag(HistoryTestTags.filter(HistoryFilter.REJECTED)).performClick()
+            onNodeWithText("Maria").assertDoesNotExist()
             onNodeWithText("0303 123 4567").assertIsDisplayed()
 
-            onNodeWithTag(HistoryTestTags.filter(HistoryFilter.CONTACTS_ONLY)).performClick()
+            onNodeWithTag(HistoryTestTags.filter(HistoryFilter.MISSED)).performClick()
             onNodeWithText("0303 123 4567").assertDoesNotExist()
-            onNodeWithText("(21) 99876-5432").assertIsDisplayed()
+            onNodeWithTag(HistoryTestTags.entry(21)).assertTextContains("Perdida")
+        }
+
+    @Test
+    fun `without the call log, history offers to read it`() =
+        runComposeUiTest {
+            val env = startTestKoin(roleHeld = true, history = SampleHistory.mixed, callLogGranted = false)
+            setContent { App() }
+            onNodeWithTag("tab.history").performClick()
+
+            onNodeWithTag(HistoryTestTags.CALL_LOG_ALLOW).performClick()
+
+            assertTrue(env.callLog.isGranted.value)
+            onNodeWithTag(HistoryTestTags.CALL_LOG).assertDoesNotExist()
         }
 
     @Test
@@ -220,7 +240,9 @@ class AppTest {
             onNodeWithTag("tab.history").performClick()
 
             onNodeWithTag(HistoryTestTags.CLEAR).performClick()
-            onNodeWithText("As 7 chamadas rejeitadas serão apagadas deste aparelho.").assertIsDisplayed()
+            onNodeWithText(
+                "As 7 chamadas serão apagadas do histórico do Knobly (o registro de chamadas do Android não muda).",
+            ).assertIsDisplayed()
             onNodeWithText("Cancelar").performClick()
             assertEquals(7, env.history.value.size)
 
@@ -228,7 +250,7 @@ class AppTest {
             onNodeWithTag(HistoryTestTags.CLEAR_CONFIRM).performClick()
 
             assertTrue(env.history.value.isEmpty())
-            onNodeWithText("Nenhuma chamada rejeitada").assertIsDisplayed()
+            onNodeWithText("Nenhuma chamada ainda").assertIsDisplayed()
             onNodeWithTag(HistoryTestTags.CLEAR).assertDoesNotExist()
         }
 
@@ -242,15 +264,15 @@ class AppTest {
             // Last 7 days: all 7 sample calls; 4 rejected by contacts only, 2 by Telemarketing.
             onNodeWithTag(
                 StatsTestTags.TOTAL,
-            ).assertTextContains("7").assertTextContains("rejeitadas nos últimos 7 dias")
-            onNodeWithText("Fora dos contatos").assertIsDisplayed()
-            onNodeWithText("Telemarketing · 0303").assertIsDisplayed()
+            ).assertTextContains("7").assertTextContains("chamadas nos últimos 7 dias")
+            onNodeWithText("Fora dos contatos").performScrollTo().assertIsDisplayed()
+            onNodeWithText("Telemarketing · 0303").performScrollTo().assertIsDisplayed()
 
-            onNodeWithText("Hora").performClick()
+            onNodeWithText("Hora").performScrollTo().performClick()
             // Last 24 hours: 13:32, 11:05, 09:47 today and 19:10, 15:22 yesterday.
             onNodeWithTag(
                 StatsTestTags.TOTAL,
-            ).assertTextContains("5").assertTextContains("rejeitadas nas últimas 24 horas")
+            ).assertTextContains("5").assertTextContains("chamadas nas últimas 24 horas")
         }
 
     @Test
@@ -259,8 +281,8 @@ class AppTest {
             startTestKoin(roleHeld = true, history = SampleHistory.calls)
             setContent { App() }
 
-            onAllNodesWithTag(HomeTestTags.STATS)[0].assertTextContains("3 hoje")
-            onAllNodesWithTag(HomeTestTags.STATS)[1].assertTextContains("7 em 7 dias")
+            onAllNodesWithTag(HomeTestTags.STATS)[0].assertTextContains("3 rejeitadas hoje")
+            onAllNodesWithTag(HomeTestTags.STATS)[1].assertTextContains("7 rejeitadas em 7 dias")
             onNodeWithTag(HomeTestTags.LATEST_REJECTION).performScrollTo()
             onNodeWithText("Rejeitada hoje às 13:32").assertIsDisplayed()
 

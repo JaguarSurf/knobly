@@ -9,6 +9,7 @@ kotlin {
             implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
+            implementation(projects.platform.fake)
             implementation(libs.kotlinx.coroutines.test)
         }
     }

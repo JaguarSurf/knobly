@@ -11,14 +11,16 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
-import app.knobly.domain.history.RejectedCall
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
 import app.knobly.domain.rules.call.CustomRuleType
 import app.knobly.domain.settings.ThemeMode
+import app.knobly.domain.stats.CallCategory
 import app.knobly.feature.calls.FiltersTestTags
 import app.knobly.feature.history.HistoryTestTags
 import app.knobly.feature.home.HomeTestTags
+import app.knobly.feature.stats.StatsTestTags
 import io.github.takahirom.roborazzi.captureRoboImage
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -39,13 +41,14 @@ class ScreenshotTest {
         /** `null`: the theme comes from [themeMode], as in the app. */
         dark: Boolean? = false,
         themeMode: ThemeMode = ThemeMode.SYSTEM,
+        callLogGranted: Boolean = true,
         settings: CallFilterSettings = CallFilterSettings(),
         contactsGranted: Boolean = true,
-        history: List<RejectedCall> = emptyList(),
+        history: List<CallRecord> = emptyList(),
         thenClick: String? = null,
         then: ComposeUiTest.() -> Unit = {},
     ) = runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT) {
-        startTestKoin(roleHeld, contactsGranted, settings, history, themeMode)
+        startTestKoin(roleHeld, contactsGranted, settings, history, themeMode, callLogGranted)
         setContent { App(darkTheme = dark) }
         tab?.let { onNodeWithTag(it).performClick() }
         thenClick?.let { onNodeWithTag(it).performScrollTo().performClick() }
@@ -124,10 +127,14 @@ class ScreenshotTest {
     fun historyEmpty() = screenshot("history-empty", tab = "tab.history")
 
     @Test
-    fun history() = screenshot("history", tab = "tab.history", history = SampleHistory.calls)
+    fun history() = screenshot("history", tab = "tab.history", history = SampleHistory.mixed)
 
     @Test
-    fun historyDark() = screenshot("history-dark", tab = "tab.history", history = SampleHistory.calls, dark = true)
+    fun historyAskCallLog() =
+        screenshot("history-ask-call-log", tab = "tab.history", history = SampleHistory.mixed, callLogGranted = false)
+
+    @Test
+    fun historyDark() = screenshot("history-dark", tab = "tab.history", history = SampleHistory.mixed, dark = true)
 
     @Test
     fun historyDetailsDark() =
@@ -167,6 +174,12 @@ class ScreenshotTest {
     fun statsWeek() =
         screenshot("stats-week", tab = "tab.stats", history = SampleHistory.longHistory) {
             onNodeWithText("Semana").performClick()
+        }
+
+    @Test
+    fun statsMissedDark() =
+        screenshot("stats-missed-dark", tab = "tab.stats", history = SampleHistory.longHistory, dark = true) {
+            onNodeWithTag(StatsTestTags.category(CallCategory.MISSED)).performClick()
         }
 
     @Test

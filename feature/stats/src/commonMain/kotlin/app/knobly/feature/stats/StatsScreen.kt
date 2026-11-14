@@ -28,29 +28,47 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.knobly.core.designsystem.GlassCard
+import app.knobly.core.designsystem.KnoblyChip
 import app.knobly.core.designsystem.KnoblyLineChart
+import app.knobly.core.designsystem.KnoblyPrimaryButton
+import app.knobly.core.designsystem.KnoblySecondaryButton
 import app.knobly.core.designsystem.KnoblySegmentedControl
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.domain.stats.CallCategory
 import app.knobly.domain.stats.CallStats
 import app.knobly.domain.stats.FilterCount
 import app.knobly.domain.stats.StatsPeriod
 import app.knobly.feature.stats.resources.Res
 import app.knobly.feature.stats.resources.stats_by_filter
 import app.knobly.feature.stats.resources.stats_by_filter_empty
+import app.knobly.feature.stats.resources.stats_by_type
+import app.knobly.feature.stats.resources.stats_call_log_allow
+import app.knobly.feature.stats.resources.stats_call_log_denied
+import app.knobly.feature.stats.resources.stats_call_log_message
+import app.knobly.feature.stats.resources.stats_call_log_title
 import app.knobly.feature.stats.resources.stats_footer
 import app.knobly.feature.stats.resources.stats_module_calls
+import app.knobly.feature.stats.resources.stats_open_settings
 import app.knobly.feature.stats.resources.stats_title
+import app.knobly.feature.stats.resources.stats_type_rang
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-/** The Statistics tab: rejected calls per hour, day, week, month and year (docs/specs/call-statistics.md). */
+/** The Statistics tab: incoming calls per hour, day, week, month and year (docs/specs/call-statistics.md). */
 @Composable
 fun StatsScreen(
     modifier: Modifier = Modifier,
     viewModel: StatsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    StatsContent(state, onPeriodChange = viewModel::setPeriod, modifier = modifier)
+    StatsContent(
+        state,
+        onPeriodChange = viewModel::setPeriod,
+        onCategoryChange = viewModel::setCategory,
+        onAllowCallLog = viewModel::allowCallLog,
+        onOpenCallLogSettings = viewModel::openCallLogSettings,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -58,6 +76,9 @@ fun StatsContent(
     state: StatsUiState,
     onPeriodChange: (StatsPeriod) -> Unit,
     modifier: Modifier = Modifier,
+    onCategoryChange: (CallCategory) -> Unit = {},
+    onAllowCallLog: () -> Unit = {},
+    onOpenCallLogSettings: () -> Unit = {},
 ) {
     val c = KnoblyTheme.colors
     Column(
@@ -74,9 +95,23 @@ fun StatsContent(
             onSelect = { onPeriodChange(StatsPeriod.entries[it]) },
             modifier = Modifier.fillMaxWidth(),
         )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CallCategory.entries.forEach { category ->
+                KnoblyChip(
+                    stringResource(category.title),
+                    selected = category == state.category,
+                    onClick = { onCategoryChange(category) },
+                    modifier = Modifier.testTag(StatsTestTags.category(category)),
+                )
+            }
+        }
         state.stats?.let { stats ->
-            ChartCard(stats)
-            ByFilterCard(stats.byFilter)
+            ChartCard(stats, state.category)
+            if (state.askCallLog) CallLogCard(state.callLogDenied, onAllowCallLog, onOpenCallLogSettings)
+            ByTypeCard(stats)
+            if (state.category == CallCategory.ALL || state.category == CallCategory.REJECTED) {
+                ByFilterCard(stats.byFilter)
+            }
         }
         Text(
             stringResource(Res.string.stats_footer),
@@ -89,9 +124,13 @@ fun StatsContent(
 }
 
 @Composable
-private fun ChartCard(stats: CallStats) {
+private fun ChartCard(
+    stats: CallStats,
+    category: CallCategory,
+) {
     val c = KnoblyTheme.colors
-    val caption = stats.period.captionText(stats.total)
+    val total = stats.totals.of(category)
+    val caption = captionText(stats.period, category, total)
     GlassCard(Modifier.fillMaxWidth(), cornerRadius = 26.dp) {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(
@@ -99,7 +138,7 @@ private fun ChartCard(stats: CallStats) {
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    stats.total.toString(),
+                    total.toString(),
                     style = MaterialTheme.typography.displaySmall.copy(fontSize = 38.sp, fontFeatureSettings = "tnum"),
                 )
                 Text(caption, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
@@ -111,11 +150,29 @@ private fun ChartCard(stats: CallStats) {
             )
         }
         KnoblyLineChart(
-            values = stats.buckets.map { it.count },
+            values = stats.buckets.map { it.counts.of(category) },
             labels = stats.period.bucketLabels(stats.buckets.map { it.start }),
-            contentDescription = "${stats.total} $caption",
+            contentDescription = "$total $caption",
             modifier = Modifier.padding(top = 12.dp).testTag(StatsTestTags.CHART),
         )
+    }
+}
+
+/** Answered, missed, "received" (outcome unknown) and rejected calls of the period. */
+@Composable
+private fun ByTypeCard(stats: CallStats) {
+    val totals = stats.totals
+    val rows =
+        buildList {
+            add(stringResource(CallCategory.ANSWERED.title) to totals.answered)
+            add(stringResource(CallCategory.MISSED.title) to totals.missed)
+            if (totals.rang > 0) add(stringResource(Res.string.stats_type_rang) to totals.rang)
+            add(stringResource(CallCategory.REJECTED.title) to totals.rejected)
+        }
+    val max = rows.maxOf { it.second }.coerceAtLeast(1)
+    GlassCard(Modifier.fillMaxWidth().testTag(StatsTestTags.BY_TYPE)) {
+        CardTitle(stringResource(Res.string.stats_by_type))
+        rows.forEach { (label, count) -> BarRow(label, count, count.toFloat() / max) }
     }
 }
 
@@ -123,11 +180,7 @@ private fun ChartCard(stats: CallStats) {
 private fun ByFilterCard(byFilter: List<FilterCount>) {
     val c = KnoblyTheme.colors
     GlassCard(Modifier.fillMaxWidth().testTag(StatsTestTags.BY_FILTER)) {
-        Text(
-            stringResource(Res.string.stats_by_filter),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.semantics { heading() },
-        )
+        CardTitle(stringResource(Res.string.stats_by_filter))
         if (byFilter.isEmpty()) {
             Text(
                 stringResource(Res.string.stats_by_filter_empty),
@@ -137,23 +190,59 @@ private fun ByFilterCard(byFilter: List<FilterCount>) {
             )
         }
         val max = byFilter.maxOfOrNull { it.count } ?: 1
-        byFilter.forEach { item -> FilterRow(item, fraction = item.count.toFloat() / max) }
+        byFilter.forEach { item -> BarRow(item.filter.text(), item.count, item.count.toFloat() / max) }
+    }
+}
+
+/** Offers the call log permission, to tell the calls that rang apart (answered or missed). */
+@Composable
+private fun CallLogCard(
+    denied: Boolean,
+    onAllow: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
+    val c = KnoblyTheme.colors
+    GlassCard(Modifier.fillMaxWidth().testTag(StatsTestTags.CALL_LOG), cornerRadius = 22.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(Res.string.stats_call_log_title), style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(if (denied) Res.string.stats_call_log_denied else Res.string.stats_call_log_message),
+                style = MaterialTheme.typography.bodySmall,
+                color = c.textSecondary,
+            )
+            if (denied) {
+                KnoblySecondaryButton(
+                    stringResource(Res.string.stats_open_settings),
+                    onClick = onOpenSettings,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                KnoblyPrimaryButton(
+                    stringResource(Res.string.stats_call_log_allow),
+                    onClick = onAllow,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun FilterRow(
-    item: FilterCount,
+private fun CardTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+}
+
+@Composable
+private fun BarRow(
+    label: String,
+    count: Int,
     fraction: Float,
 ) {
     val c = KnoblyTheme.colors
     Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row {
-            Text(item.filter.text(), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-            Text(
-                item.count.toString(),
-                style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"),
-            )
+            Text(label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+            Text(count.toString(), style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum"))
         }
         val shape = RoundedCornerShape(3.dp)
         Box(
@@ -163,13 +252,15 @@ private fun FilterRow(
                 .clip(shape)
                 .background(c.glassStrong),
         ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(fraction)
-                    .height(6.dp)
-                    .clip(shape)
-                    .background(Brush.horizontalGradient(listOf(c.toggleOn, c.accent))),
-            )
+            if (count > 0) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(fraction)
+                        .height(6.dp)
+                        .clip(shape)
+                        .background(Brush.horizontalGradient(listOf(c.toggleOn, c.accent))),
+                )
+            }
         }
     }
 }

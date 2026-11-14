@@ -1,8 +1,9 @@
 package app.knobly.domain.stats
 
 import app.knobly.core.model.PhoneNumber
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.InMemoryCallHistoryRepository
-import app.knobly.domain.history.RejectedCall
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.history.RuleSnapshot
 import app.knobly.domain.rules.call.CustomRuleType
@@ -36,9 +37,9 @@ class CallStatisticsTest {
         time: Instant,
         reason: RejectionReason = RejectionReason.CONTACTS_ONLY,
         rule: RuleSnapshot? = null,
-    ) = RejectedCall(id, time, PhoneNumber("03031234567", null, "3031234567"), reason, rule)
+    ) = CallRecord(id, time, PhoneNumber("03031234567", null, "3031234567"), CallOutcome.REJECTED, reason, rule)
 
-    private fun statistics(vararg calls: RejectedCall): CallStatistics {
+    private fun statistics(vararg calls: CallRecord): CallStatistics {
         val clock =
             object : Clock {
                 override fun now() = now.toInstant(saoPaulo)
@@ -88,8 +89,8 @@ class CallStatisticsTest {
                     call(5, at(2026, 11, 7, 23, 59)),
                 ).stats(StatsPeriod.DAY).first()
 
-            assertEquals(4, stats.total)
-            assertEquals(listOf(1, 0, 0, 0, 0, 1, 2), stats.buckets.map { it.count })
+            assertEquals(4, stats.totals.total)
+            assertEquals(listOf(1, 0, 0, 0, 0, 1, 2), stats.buckets.map { it.counts.total })
             assertEquals(
                 listOf(
                     // The newest call of the rule gives its label.
@@ -113,11 +114,11 @@ class CallStatisticsTest {
                 )
 
             val months = statistics.stats(StatsPeriod.MONTH).first()
-            assertEquals(3, months.total)
-            assertEquals(listOf(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), months.buckets.map { it.count })
+            assertEquals(3, months.totals.total)
+            assertEquals(listOf(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1), months.buckets.map { it.counts.total })
 
             val years = statistics.stats(StatsPeriod.YEAR).first()
-            assertEquals(listOf(0, 0, 1, 1, 2), years.buckets.map { it.count })
+            assertEquals(listOf(0, 0, 1, 1, 2), years.buckets.map { it.counts.total })
         }
 
     @Test
@@ -130,9 +131,9 @@ class CallStatisticsTest {
                     call(3, at(2026, 10, 1)),
                 ).summary().first()
 
-            assertEquals(1, summary.today)
-            assertEquals(2, summary.lastSevenDays)
-            assertEquals(1L, summary.latest?.id)
+            assertEquals(1, summary.rejectedToday)
+            assertEquals(2, summary.rejectedLastSevenDays)
+            assertEquals(1L, summary.latestRejected?.id)
         }
 
     @Test
@@ -140,6 +141,48 @@ class CallStatisticsTest {
         runTest {
             val summary = statistics().summary().first()
 
-            assertEquals(CallsSummary(today = 0, lastSevenDays = 0, latest = null), summary)
+            assertEquals(CallsSummary(rejectedToday = 0, rejectedLastSevenDays = 0, latestRejected = null), summary)
+        }
+
+    @Test
+    fun `categories per bucket and in total with filters counting only rejections`() =
+        runTest {
+            fun allowed(
+                id: Long,
+                time: Instant,
+                outcome: CallOutcome,
+            ) = CallRecord(id, time, PhoneNumber("11912345678", null, "11912345678"), outcome)
+            val stats =
+                statistics(
+                    call(1, at(2026, 11, 14, 9), RejectionReason.CUSTOM_RULE, tm),
+                    allowed(2, at(2026, 11, 14, 10), CallOutcome.ANSWERED),
+                    allowed(3, at(2026, 11, 14, 11), CallOutcome.MISSED),
+                    allowed(4, at(2026, 11, 13, 11), CallOutcome.ANSWERED),
+                    allowed(5, at(2026, 11, 13, 12), CallOutcome.RANG),
+                ).stats(StatsPeriod.DAY).first()
+
+            assertEquals(CallCounts(rejected = 1, answered = 2, missed = 1, rang = 1), stats.totals)
+            assertEquals(5, stats.totals.of(CallCategory.ALL))
+            assertEquals(CallCounts(rejected = 1, answered = 1, missed = 1), stats.buckets.last().counts)
+            assertEquals(listOf(0, 0, 0, 0, 0, 1, 1), stats.buckets.map { it.counts.of(CallCategory.ANSWERED) })
+            assertEquals(listOf(FilterCount(StatsFilter.Rule(tm), 1)), stats.byFilter)
+        }
+
+    @Test
+    fun `home counts only rejections`() =
+        runTest {
+            val summary =
+                statistics(
+                    call(1, at(2026, 11, 14, 9)),
+                    CallRecord(
+                        2,
+                        at(2026, 11, 14, 10),
+                        PhoneNumber("11912345678", null, "11912345678"),
+                        CallOutcome.ANSWERED,
+                    ),
+                ).summary().first()
+
+            assertEquals(1, summary.rejectedToday)
+            assertEquals(1L, summary.latestRejected?.id)
         }
 }

@@ -82,9 +82,9 @@ flowchart TD
 | `:core:datastore` | Persisted JSON documents: `DocumentStore`, created by name through a `DocumentStoreFactory` (`call_filters`, `app_settings`) |
 | `:core:designsystem` | Theme, colors, typography, reusable components |
 | `:domain:rules` | Rule engine: evaluation, ordering, caching, rule repository |
-| `:domain:history` | Rejected calls: repository on the database, recorder (rule snapshot, 3-year retention) |
+| `:domain:history` | Incoming calls (rejected, answered, missed): repository on the database, recorder (rule snapshot, 3-year retention), `CallOutcomeResolver` (outcomes from the call log), `CallLogAccess` port |
 | `:domain:settings` | App preferences (`AppSettings`: theme), see [specs/appearance.md](specs/appearance.md) |
-| `:domain:stats` | Statistics of rejected calls: buckets per period in the local time zone, counts per filter, Home summary |
+| `:domain:stats` | Statistics of incoming calls: counts per category (answered, missed, rejected) and bucket in the local time zone, rejections per filter, Home summary |
 | `:feature:home` | Control center (the **Início** tab): status of each module and the way into its controls; future modules (messages, notifications) appear here |
 | `:feature:calls` | Screens to create, edit, reorder and enable call rules |
 | `:feature:history` | The **Histórico** tab: rejected calls by day, filters, details sheet, clear history |
@@ -133,6 +133,7 @@ interface ContactsAccess {
 |---|---|---|---|
 | `ScreeningRoleController` | `AndroidScreeningRoleController` (`RoleManager.ROLE_CALL_SCREENING`) | `IosScreeningRoleController` (no role; guide to Settings) | `FakeScreeningRoleController` (toggle) |
 | `PhoneNumberNormalizer` (`:core:phone`) | `LibPhoneNumberNormalizer` | PhoneNumberKit (planned, from Swift) | `LibPhoneNumberNormalizer` |
+| `CallLogAccess` (`:domain:history`, optional) | `AndroidCallLogAccess` (`READ_CALL_LOG`, read only) | `IosCallLogAccess` (stub, never granted) | `FakeCallLogAccess` (entries logged by the harness) |
 | `ContactsAccess` | `AndroidContactsAccess` (`READ_CONTACTS`, saved numbers and a version from `ContactsContract`) | `IosContactsAccess` (stub, never granted; contacts already win on iOS) | `FakeContactsAccess` (two fake contacts, one saved without the 9th digit; permission toggle) |
 
 Incoming calls are not a port: on Android the `CallScreeningService` calls `CallScreener` (`:domain:rules`) directly (it must answer within seconds), and the desktop harness's incoming call simulator does the same with the same screener and normalizer. iOS has no per-call callback.
@@ -203,7 +204,7 @@ sequenceDiagram
 
 ## Data and statistics
 
-Table `call_events` (only rejected calls for now, see [specs/call-history.md](specs/call-history.md)): `id`, `timestamp_utc` (indexed), `number_raw`, `number_e164`, `number_national`, `action`, `reason`, `matched_rule_id`, and a snapshot of the rule (`rule_type`, `rule_value`, `rule_label`). Retention: 3 years, applied when a call is recorded.
+Table `call_events` (every incoming call Knobly screens, see [specs/call-history.md](specs/call-history.md) and [ADR-0008](adr/0008-incoming-call-history-and-call-log.md)): `id`, `timestamp_utc` (indexed), `number_raw`, `number_e164`, `number_national`, `action` (`REJECT`/`ALLOW`), `reason`, `matched_rule_id`, a snapshot of the rule (`rule_type`, `rule_value`, `rule_label`) and, since schema version 2, `outcome` (`answered`/`missed` for allowed calls, from the call log). Retention: 3 years, applied when a call is recorded.
 
 Each platform module builds the `KnoblyDatabase` (Android: app database path; desktop harness: temp dir; iOS: documents) with `buildKnoblyDatabase()`; UI tests replace the history with `InMemoryCallHistoryRepository`.
 

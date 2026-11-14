@@ -4,6 +4,7 @@ import app.knobly.core.database.KnoblyDatabase
 import app.knobly.core.datastore.DocumentStoreFactory
 import app.knobly.domain.history.CallHistoryRecorder
 import app.knobly.domain.history.CallHistoryRepository
+import app.knobly.domain.history.CallOutcomeResolver
 import app.knobly.domain.history.RoomCallHistoryRepository
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CallFilterSettingsRepository
@@ -35,8 +36,8 @@ import kotlin.time.Clock
 
 /**
  * Platform-independent dependency graph. Each platform module provides the ports (ScreeningRoleController,
- * ContactsAccess), the PhoneNumberNormalizer, a DocumentStoreFactory and the KnoblyDatabase (their file paths are
- * platform specific).
+ * ContactsAccess, CallLogAccess), the PhoneNumberNormalizer, a DocumentStoreFactory and the KnoblyDatabase (their
+ * file paths are platform specific).
  */
 val sharedModule: Module =
     module {
@@ -63,6 +64,15 @@ val sharedModule: Module =
         }
         single<CallHistoryRepository> { RoomCallHistoryRepository(get<KnoblyDatabase>().callEvents()) }
         single { CallHistoryRecorder(get(), get<CallFilterSettingsRepository>().settings, get()) }
+        single {
+            CallOutcomeResolver(
+                history = get(),
+                callLog = get(),
+                normalizer = get(),
+                clock = get(),
+                dispatcher = getOrNull<CoroutineDispatcher>(named(SCREENING_DISPATCHER)) ?: Dispatchers.Default,
+            )
+        }
         single { CallStatistics(get(), get()) { get<TimeZone>() } }
         single { CallRulesProvider(get<CallFilterSettingsRepository>().settings, get(), get()) }
         single {

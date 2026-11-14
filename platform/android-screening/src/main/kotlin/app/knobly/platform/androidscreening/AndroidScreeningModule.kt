@@ -7,6 +7,7 @@ import app.knobly.core.datastore.DocumentStoreFactory
 import app.knobly.core.datastore.JsonDocumentStoreFactory
 import app.knobly.core.phone.LibPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
+import app.knobly.domain.port.CallLogAccess
 import app.knobly.domain.port.ContactsAccess
 import app.knobly.domain.port.ScreeningRoleController
 import app.knobly.domain.rules.call.SCREENING_DISPATCHER
@@ -23,6 +24,7 @@ val androidScreeningModule =
     module {
         single { AndroidScreeningRoleController(androidContext()) } bind ScreeningRoleController::class
         single { AndroidContactsAccess(androidContext()) } bind ContactsAccess::class
+        single { AndroidCallLogAccess(androidContext()) } bind CallLogAccess::class
         single<PhoneNumberNormalizer> { LibPhoneNumberNormalizer() }
         // files/datastore/<name>.json, e.g. call_filters.json
         single<DocumentStoreFactory> {

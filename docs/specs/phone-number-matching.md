@@ -15,6 +15,7 @@ Recognize a caller as the same number the user saved, however it was saved. In B
 | "Contatos sempre passam" (custom rules never reject a contact) | Yes |
 | Custom rule **Número exato** | Yes: the saved number and the caller are compared with the same rules |
 | Custom rules **Começa com** and **Regex** | No: they match the digits as written (see [call-filters.md](call-filters.md)) |
+| History: contact names, and matching a call with its call log entry | Yes ([call-history.md](call-history.md)) |
 
 ## Rules
 

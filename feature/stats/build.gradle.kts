@@ -8,6 +8,7 @@ kotlin {
             implementation(projects.domain.stats)
         }
         commonTest.dependencies {
+            implementation(projects.platform.fake)
             implementation(libs.kotlinx.coroutines.test)
         }
     }

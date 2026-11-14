@@ -6,26 +6,6 @@
     <string name="stats_period_week">Week</string>
     <string name="stats_period_month">Month</string>
     <string name="stats_period_year">Year</string>
-    <plurals name="stats_caption_hour">
-        <item quantity="one">rejected in the last 24 hours</item>
-        <item quantity="other">rejected in the last 24 hours</item>
-    </plurals>
-    <plurals name="stats_caption_day">
-        <item quantity="one">rejected in the last 7 days</item>
-        <item quantity="other">rejected in the last 7 days</item>
-    </plurals>
-    <plurals name="stats_caption_week">
-        <item quantity="one">rejected in the last 8 weeks</item>
-        <item quantity="other">rejected in the last 8 weeks</item>
-    </plurals>
-    <plurals name="stats_caption_month">
-        <item quantity="one">rejected in the last 12 months</item>
-        <item quantity="other">rejected in the last 12 months</item>
-    </plurals>
-    <plurals name="stats_caption_year">
-        <item quantity="one">rejected in the last 5 years</item>
-        <item quantity="other">rejected in the last 5 years</item>
-    </plurals>
     <string name="stats_module_calls">Calls</string>
     <string name="stats_hour_label">%1$s:00</string>
     <string name="stats_week_label">%2$d/%1$d</string>
@@ -52,7 +32,7 @@
         <item>Nov</item>
         <item>Dec</item>
     </string-array>
-    <string name="stats_by_filter">By filter</string>
+    <string name="stats_by_filter">Rejected by filter</string>
     <string name="stats_by_filter_empty">No rejected calls in this period.</string>
     <string name="stats_filter_contacts">Not in contacts</string>
     <string name="stats_filter_deleted">Deleted rules</string>
@@ -60,4 +40,36 @@
     <string name="stats_rule_hidden">Hidden number</string>
     <string name="stats_rule_regex">Regex %1$s</string>
     <string name="stats_footer">Everything stays on this device.</string>
+    <string name="stats_category_all">All</string>
+    <string name="stats_category_answered">Answered</string>
+    <string name="stats_category_missed">Missed</string>
+    <string name="stats_category_rejected">Rejected</string>
+    <plurals name="stats_word_all">
+        <item quantity="one">call</item>
+        <item quantity="other">calls</item>
+    </plurals>
+    <plurals name="stats_word_answered">
+        <item quantity="one">answered</item>
+        <item quantity="other">answered</item>
+    </plurals>
+    <plurals name="stats_word_missed">
+        <item quantity="one">missed</item>
+        <item quantity="other">missed</item>
+    </plurals>
+    <plurals name="stats_word_rejected">
+        <item quantity="one">rejected</item>
+        <item quantity="other">rejected</item>
+    </plurals>
+    <string name="stats_window_hour">in the last 24 hours</string>
+    <string name="stats_window_day">in the last 7 days</string>
+    <string name="stats_window_week">in the last 8 weeks</string>
+    <string name="stats_window_month">in the last 12 months</string>
+    <string name="stats_window_year">in the last 5 years</string>
+    <string name="stats_by_type">By type</string>
+    <string name="stats_type_rang">Received (no detail)</string>
+    <string name="stats_call_log_title">Answered or missed?</string>
+    <string name="stats_call_log_message">Let Knobly read the call log to tell the calls that rang apart. It only reads it, and nothing leaves the phone.</string>
+    <string name="stats_call_log_allow">Allow</string>
+    <string name="stats_call_log_denied">Without the call log, calls that rang show as received.</string>
+    <string name="stats_open_settings">Open settings</string>
 </resources>

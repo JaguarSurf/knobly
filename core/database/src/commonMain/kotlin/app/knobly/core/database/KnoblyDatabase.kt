@@ -1,5 +1,6 @@
 package app.knobly.core.database
 
+import androidx.room.AutoMigration
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -13,7 +14,15 @@ import kotlinx.coroutines.IO
  *
  * Schema changes need a new [version] and a migration; exported schemas live in `core/database/schemas/`.
  */
-@Database(entities = [CallEventEntity::class], version = 1, exportSchema = true)
+@Database(
+    entities = [CallEventEntity::class],
+    version = 2,
+    exportSchema = true,
+    autoMigrations = [
+        // 2: allowed calls are recorded too, with their outcome (answered/missed) from the call log.
+        AutoMigration(from = 1, to = 2),
+    ],
+)
 @ConstructedBy(KnoblyDatabaseConstructor::class)
 abstract class KnoblyDatabase : RoomDatabase() {
     abstract fun callEvents(): CallEventDao

@@ -1,7 +1,8 @@
 package app.knobly.app.shared
 
 import app.knobly.core.phone.LibPhoneNumberNormalizer
-import app.knobly.domain.history.RejectedCall
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.history.RuleSnapshot
 import app.knobly.domain.rules.call.CustomRuleType
@@ -22,10 +23,11 @@ internal object SampleHistory {
         ago: Duration,
         raw: String?,
         rule: RuleSnapshot? = null,
-    ) = RejectedCall(
+    ) = CallRecord(
         id = id,
         timestamp = TEST_NOW - ago,
         number = normalizer.normalize(raw),
+        outcome = CallOutcome.REJECTED,
         reason = if (rule != null) RejectionReason.CUSTOM_RULE else RejectionReason.CONTACTS_ONLY,
         rule = rule,
     )
@@ -41,21 +43,62 @@ internal object SampleHistory {
             call(7, 5.days, "11987654321"),
         )
 
+    private fun allowed(
+        id: Long,
+        ago: Duration,
+        raw: String,
+        outcome: CallOutcome,
+    ) = CallRecord(id = id, timestamp = TEST_NOW - ago, number = normalizer.normalize(raw), outcome = outcome)
+
+    /** [calls] plus calls that rang: answered (one from the fake contact Maria), missed and not yet known. */
+    val mixed: List<CallRecord> =
+        calls +
+            listOf(
+                allowed(20, 12.minutes, "11912345678", CallOutcome.ANSWERED),
+                allowed(21, 1.hours + 40.minutes, "21987650000", CallOutcome.MISSED),
+                allowed(22, 3.hours + 5.minutes, "31991112222", CallOutcome.RANG),
+                allowed(23, 1.days - 2.hours, "11912345678", CallOutcome.ANSWERED),
+            )
+
     /**
-     * About a year and a half of rejected calls (deterministic, ~1-4 a day, busier in the morning and afternoon),
-     * for the Statistics screenshots. Ends at [TEST_NOW].
+     * About a year and a half of incoming calls (deterministic, ~1-4 a day): rejected, answered and missed, for the
+     * Statistics screenshots. Ends at [TEST_NOW].
      */
-    val longHistory: List<RejectedCall> =
+    val longHistory: List<CallRecord> =
         (0 until 540).flatMap { daysAgo ->
             val perDay = 1 + (daysAgo * 7 + daysAgo / 30) % 4
             (0 until perDay).map { index ->
                 val rule = listOf(null, telemarketing, null, donations, collector, telemarketing)[(daysAgo + index) % 6]
-                call(
-                    id = daysAgo * 10L + index + 100,
-                    ago = daysAgo.days + (1 + (index * 5 + daysAgo) % 9).hours + (index * 13).minutes,
-                    raw = if (rule == null) "1198765${(4321 + daysAgo) % 10000}" else "03031234567",
-                    rule = rule,
-                )
+                val id = daysAgo * 10L + index + 100
+                val ago = daysAgo.days + (1 + (index * 5 + daysAgo) % 9).hours + (index * 13).minutes
+                when ((daysAgo * 3 + index) % 5) {
+                    0 -> {
+                        allowed(id, ago, "11912345678", CallOutcome.ANSWERED)
+                    }
+
+                    1 -> {
+                        allowed(id, ago, "21987650000", CallOutcome.ANSWERED)
+                    }
+
+                    2 -> {
+                        allowed(id, ago, "31991112222", CallOutcome.MISSED)
+                    }
+
+                    else -> {
+                        call(
+                            id,
+                            ago,
+                            if (rule ==
+                                null
+                            ) {
+                                "1198765${(4321 + daysAgo) % 10000}"
+                            } else {
+                                "03031234567"
+                            },
+                            rule,
+                        )
+                    }
+                }
             }
         }
 }

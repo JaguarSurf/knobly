@@ -30,6 +30,12 @@ object KnoblyIcons {
 
     val Phone: ImageVector by lazy { strokeIcon("Phone", PHONE) }
 
+    /** Answered incoming call: phone + arrow pointing in. */
+    val PhoneIncoming: ImageVector by lazy { strokeIcon("PhoneIncoming", PHONE, "M21 3l-6 6", "M15 4v5h5") }
+
+    /** Missed call: phone + bouncing arrow. */
+    val PhoneMissed: ImageVector by lazy { strokeIcon("PhoneMissed", PHONE, "M14 3l3.5 3.5L22 2") }
+
     val PhoneBlocked: ImageVector by lazy { strokeIcon("PhoneBlocked", PHONE, "M21 3L3 21") }
 
     val Person: ImageVector by lazy { strokeIcon("Person", circle(12f, 8f, 4f), "M4 21c0-4 4-6 8-6s8 2 8 6") }

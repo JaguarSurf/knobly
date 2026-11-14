@@ -1,5 +1,6 @@
 package app.knobly.domain.rules.call
 
+import app.knobly.domain.port.ContactNumber
 import app.knobly.domain.port.ContactsAccess
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,8 +29,8 @@ internal class TestContacts(
 
     override fun contactsVersion(): String = version.toString()
 
-    override fun phoneNumbers(): List<String> {
+    override fun phoneNumbers(): List<ContactNumber> {
         reads++
-        return if (grantedState.value) numbers else emptyList()
+        return if (grantedState.value) numbers.map { ContactNumber(it, "Contact $it") } else emptyList()
     }
 }

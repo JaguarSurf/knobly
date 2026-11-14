@@ -67,10 +67,10 @@ internal fun HistoryDetailsSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BlockedBadge()
+                OutcomeBadge(entry.outcome)
                 Column(Modifier.padding(start = 14.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        entry.number ?: stringResource(Res.string.history_hidden_number),
+                        entry.name ?: entry.number ?: stringResource(Res.string.history_hidden_number),
                         style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
                     )
                     Text(
@@ -87,7 +87,7 @@ internal fun HistoryDetailsSheet(
                     color = c.textSecondary,
                 )
                 Text(
-                    entry.reasonText(),
+                    entry.statusText(),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 4.dp),
                 )

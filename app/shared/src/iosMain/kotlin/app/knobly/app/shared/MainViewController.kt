@@ -8,8 +8,10 @@ import app.knobly.core.datastore.DocumentStoreFactory
 import app.knobly.core.datastore.JsonDocumentStoreFactory
 import app.knobly.core.phone.DigitsOnlyPhoneNumberNormalizer
 import app.knobly.core.phone.PhoneNumberNormalizer
+import app.knobly.domain.port.CallLogAccess
 import app.knobly.domain.port.ContactsAccess
 import app.knobly.domain.port.ScreeningRoleController
+import app.knobly.platform.ios.calldirectory.IosCallLogAccess
 import app.knobly.platform.ios.calldirectory.IosContactsAccess
 import app.knobly.platform.ios.calldirectory.IosScreeningRoleController
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -28,6 +30,7 @@ fun initKoin() {
                 module {
                     single<ScreeningRoleController> { IosScreeningRoleController() }
                     single<ContactsAccess> { IosContactsAccess() }
+                    single<CallLogAccess> { IosCallLogAccess() }
                     // TODO(ios): PhoneNumberKit from Swift (docs/architecture.md, Platform ports).
                     single<PhoneNumberNormalizer> { DigitsOnlyPhoneNumberNormalizer() }
                     // Stays empty on iOS (no per-call callback, docs/platforms.md),

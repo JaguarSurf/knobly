@@ -74,12 +74,41 @@ class CallHistoryTest {
         }
 
     @Test
-    fun `allowed calls are not recorded`() =
+    fun `allowed calls are recorded as rang until the call log tells how they ended`() =
         runTest {
-            recorder.record(call("11912345678"), Decision.Default)
-            recorder.record(call("11912345678"), Decision(Action.ALLOW, CallFilterRuleIds.CONTACTS_ALLOW))
+            recorder.record(call("11912345678", now - 1.minutes), Decision.Default)
+            recorder.record(call("21987654321"), Decision(Action.ALLOW, CallFilterRuleIds.CONTACTS_ALLOW))
 
-            assertTrue(history.calls.first().isEmpty())
+            val calls = history.calls.first()
+            assertEquals(listOf(CallOutcome.RANG, CallOutcome.RANG), calls.map { it.outcome })
+            assertNull(calls.first().reason)
+            assertEquals(2, history.pendingOutcomes(now - 1.days).size)
+
+            history.setOutcome(calls.first().id, CallOutcome.ANSWERED)
+
+            assertEquals(
+                CallOutcome.ANSWERED,
+                history.calls
+                    .first()
+                    .first()
+                    .outcome,
+            )
+            assertEquals(listOf("11912345678"), history.pendingOutcomes(now - 1.days).map { it.number?.national })
+        }
+
+    @Test
+    fun `the latest rejected call ignores calls that rang`() =
+        runTest {
+            recorder.record(call("0303 111 1111", now - 1.minutes), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
+            recorder.record(call("11912345678"), Decision.Default)
+
+            assertEquals(
+                "03031111111",
+                history.latestRejected
+                    .first()
+                    ?.number
+                    ?.raw,
+            )
         }
 
     @Test

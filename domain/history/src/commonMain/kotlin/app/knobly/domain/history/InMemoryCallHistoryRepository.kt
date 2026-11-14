@@ -8,22 +8,23 @@ import kotlin.time.Instant
 
 /** Non-persistent [CallHistoryRepository], for UI tests and previews. */
 class InMemoryCallHistoryRepository(
-    initial: List<RejectedCall> = emptyList(),
+    initial: List<CallRecord> = emptyList(),
 ) : CallHistoryRepository {
     private val state = MutableStateFlow(initial.sortedWith(newestFirst))
     private var nextId = (initial.maxOfOrNull { it.id } ?: 0) + 1
 
-    override val calls: Flow<List<RejectedCall>> = state
+    override val calls: Flow<List<CallRecord>> = state
 
     /** The current calls (test assertions). */
-    val value: List<RejectedCall> get() = state.value
+    val value: List<CallRecord> get() = state.value
 
-    override val latest: Flow<RejectedCall?> = state.map { it.firstOrNull() }
+    override val latestRejected: Flow<CallRecord?> =
+        state.map { calls -> calls.firstOrNull { it.outcome == CallOutcome.REJECTED } }
 
-    override fun callsSince(instant: Instant): Flow<List<RejectedCall>> =
+    override fun callsSince(instant: Instant): Flow<List<CallRecord>> =
         state.map { calls -> calls.filter { it.timestamp >= instant } }
 
-    override suspend fun add(call: RejectedCall) {
+    override suspend fun add(call: CallRecord) {
         state.update { (it + call.copy(id = nextId++)).sortedWith(newestFirst) }
     }
 
@@ -39,7 +40,25 @@ class InMemoryCallHistoryRepository(
             }
         }
 
+    override suspend fun pendingOutcomes(instant: Instant): List<CallRecord> =
+        state.value.filter { it.outcome == CallOutcome.RANG && it.timestamp >= instant }.sortedBy { it.timestamp }
+
+    override suspend fun setOutcome(
+        id: Long,
+        outcome: CallOutcome,
+    ) = state.update { calls ->
+        calls.map {
+            if (it.id == id &&
+                it.outcome == CallOutcome.RANG
+            ) {
+                it.copy(outcome = outcome)
+            } else {
+                it
+            }
+        }
+    }
+
     private companion object {
-        val newestFirst = compareByDescending<RejectedCall> { it.timestamp }.thenByDescending { it.id }
+        val newestFirst = compareByDescending<CallRecord> { it.timestamp }.thenByDescending { it.id }
     }
 }

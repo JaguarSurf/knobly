@@ -21,7 +21,7 @@ The two platforms have very different capabilities for filtering calls. This is 
 - **API:** `android.telecom.CallScreeningService` + `RoleManager.ROLE_CALL_SCREENING`.
 - **Minimum:** Android 10 (API 29). Below that, only by being the default dialer, which is out of scope.
 - **Possible responses:** `setDisallowCall`, `setRejectCall`, `setSilenceCall`, `setSkipCallLog`, `setSkipNotification`.
-- **Permissions:** `READ_CONTACTS` (for the contacts filter) and `POST_NOTIFICATIONS` (optional). Does not use `READ_CALL_LOG`, which is a restricted permission on the Play Store.
+- **Permissions:** `READ_CONTACTS` (for the contacts filter), `READ_CALL_LOG` (optional: whether calls that rang were answered or missed, see [ADR-0008](adr/0008-incoming-call-history-and-call-log.md); a restricted permission on the Play Store that needs a declaration) and `POST_NOTIFICATIONS` (optional).
 - **To validate in the spike:** the documentation indicates that the system may not forward calls from numbers in the contacts to the service. Test on Samsung, Xiaomi, Motorola and Pixel.
 
 ## iOS

@@ -24,8 +24,8 @@
         <item quantity="one">%1$d active filter</item>
         <item quantity="other">%1$d active filters</item>
     </plurals>
-    <string name="home_stat_today">today</string>
-    <string name="home_stat_week">in 7 days</string>
+    <string name="home_stat_today">rejected today</string>
+    <string name="home_stat_week">rejected in 7 days</string>
     <string name="home_latest_today">Rejected today at %1$s</string>
     <string name="home_latest_yesterday">Rejected yesterday at %1$s</string>
     <string name="home_latest_date">Rejected on %2$d/%1$d at %3$s</string>

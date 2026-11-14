@@ -7,6 +7,8 @@ object HistoryTestTags {
     const val DETAILS = "history.details"
     const val COPY = "history.copy"
     const val DELETE = "history.delete"
+    const val CALL_LOG = "history.callLog"
+    const val CALL_LOG_ALLOW = "history.callLogAllow"
 
     fun filter(filter: HistoryFilter) = "history.filter.${filter.name}"
 

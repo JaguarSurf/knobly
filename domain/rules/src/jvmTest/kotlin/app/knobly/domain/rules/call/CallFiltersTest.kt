@@ -186,6 +186,18 @@ class CallFiltersTest {
         }
 
     @Test
+    fun `contact names are found with the same matching`() =
+        runTest {
+            val contacts = TestContacts(listOf("(35) 8123-4567"))
+            val directory =
+                ContactDirectory(contacts, normalizer, backgroundScope, UnconfinedTestDispatcher(testScheduler))
+            val caller = requireNotNull(normalizer.normalize("+55 35 98123-4567"))
+            val stranger = requireNotNull(normalizer.normalize("(11) 98123-4567"))
+
+            assertEquals(mapOf(caller to "Contact (35) 8123-4567"), directory.names(listOf(caller, stranger)))
+        }
+
+    @Test
     fun `an exact number rule matches with or without the 9th digit and the DDD`() =
         runTest {
             val old =

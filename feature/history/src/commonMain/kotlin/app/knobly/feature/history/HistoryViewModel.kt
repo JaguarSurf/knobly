@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.history.CallHistoryRepository
-import app.knobly.domain.history.RejectedCall
+import app.knobly.domain.history.CallOutcome
+import app.knobly.domain.history.CallOutcomeResolver
+import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.history.RuleSnapshot
+import app.knobly.domain.rules.call.ContactDirectory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +24,20 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 
-enum class HistoryFilter { ALL, CONTACTS_ONLY, RULES }
+/** The History chips: every incoming call, or one outcome. */
+enum class HistoryFilter { ALL, ANSWERED, MISSED, REJECTED }
+
+/** Whether to offer the call log permission (to tell answered from missed calls). */
+enum class CallLogPrompt {
+    /** Granted, or no call rang yet. */
+    NONE,
+
+    /** Not granted and some calls only "rang": offer to allow it. */
+    ASK,
+
+    /** The user refused: point to the app settings. */
+    DENIED,
+}
 
 /** How a day header reads: "Hoje", "Ontem" or a date (with the year only when it is not the current one). */
 sealed interface DayLabel {
@@ -35,12 +51,15 @@ sealed interface DayLabel {
     ) : DayLabel
 }
 
-/** One rejected call, ready to show. */
+/** One incoming call, ready to show. */
 data class HistoryEntry(
     val id: Long,
     /** Formatted for display; `null` when the number was hidden. */
     val number: String?,
-    val reason: RejectionReason,
+    /** The contact's name, when the number is saved and the contacts can be read. */
+    val name: String?,
+    val outcome: CallOutcome,
+    val reason: RejectionReason?,
     val rule: RuleSnapshot?,
     val date: LocalDate,
     /** `HH:mm`, local time. */
@@ -61,75 +80,107 @@ data class HistoryUiState(
     /** The entry shown in the details sheet. */
     val selected: HistoryEntry? = null,
     val confirmingClear: Boolean = false,
+    val callLogPrompt: CallLogPrompt = CallLogPrompt.NONE,
 )
 
-/** The History tab: rejected calls grouped by local day, newest first (docs/specs/call-history.md). */
+/** The History tab: incoming calls grouped by local day, newest first (docs/specs/call-history.md). */
 class HistoryViewModel(
     private val history: CallHistoryRepository,
+    private val contacts: ContactDirectory,
+    private val outcomes: CallOutcomeResolver,
     private val normalizer: PhoneNumberNormalizer,
     private val clock: Clock,
     private val timeZone: TimeZone,
 ) : ViewModel() {
-    private val filter = MutableStateFlow(HistoryFilter.ALL)
-    private val selectedId = MutableStateFlow<Long?>(null)
-    private val confirmingClear = MutableStateFlow(false)
+    private val view = MutableStateFlow(ViewState())
 
     val state: StateFlow<HistoryUiState> =
-        combine(history.calls, filter, selectedId, confirmingClear) { calls, filter, selectedId, confirming ->
-            val entries = calls.map { it.toEntry() }
+        combine(history.calls, view, outcomes.callLogGranted) { calls, view, callLogGranted ->
+            val names = contacts.names(calls.mapNotNull { it.number })
+            val entries = calls.map { it.toEntry(names[it.number]) }
             val today = clock.now().toLocalDateTime(timeZone).date
             HistoryUiState(
                 loading = false,
-                filter = filter,
+                filter = view.filter,
                 totalCount = calls.size,
                 days =
                     entries
-                        .filter { it.matches(filter) }
+                        .filter { it.matches(view.filter) }
                         .groupBy { it.date }
                         .map { (date, dayEntries) -> HistoryDay(date.label(today), dayEntries) },
-                selected = entries.firstOrNull { it.id == selectedId },
-                confirmingClear = confirming,
+                selected = entries.firstOrNull { it.id == view.selectedId },
+                confirmingClear = view.confirmingClear,
+                callLogPrompt =
+                    when {
+                        callLogGranted || calls.none { it.outcome == CallOutcome.RANG } -> CallLogPrompt.NONE
+                        view.callLogDenied -> CallLogPrompt.DENIED
+                        else -> CallLogPrompt.ASK
+                    },
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, HistoryUiState())
 
-    fun setFilter(value: HistoryFilter) = filter.update { value }
+    init {
+        // Calls that rang since the app was last opened: learn from the call log how they ended.
+        viewModelScope.launch { outcomes.resolvePending() }
+    }
 
-    fun select(id: Long) = selectedId.update { id }
+    fun setFilter(value: HistoryFilter) = view.update { it.copy(filter = value) }
 
-    fun dismissDetails() = selectedId.update { null }
+    fun select(id: Long) = view.update { it.copy(selectedId = id) }
+
+    fun dismissDetails() = view.update { it.copy(selectedId = null) }
 
     fun delete(id: Long) {
-        selectedId.update { null }
+        view.update { it.copy(selectedId = null) }
         viewModelScope.launch { history.delete(id) }
     }
 
-    fun requestClear() = confirmingClear.update { true }
+    fun requestClear() = view.update { it.copy(confirmingClear = true) }
 
-    fun cancelClear() = confirmingClear.update { false }
+    fun cancelClear() = view.update { it.copy(confirmingClear = false) }
 
     fun clear() {
-        confirmingClear.update { false }
+        view.update { it.copy(confirmingClear = false) }
         viewModelScope.launch { history.clear() }
     }
 
-    private fun RejectedCall.toEntry(): HistoryEntry {
+    fun allowCallLog() {
+        viewModelScope.launch {
+            val granted = outcomes.requestCallLogAccess()
+            view.update { it.copy(callLogDenied = !granted) }
+        }
+    }
+
+    fun openCallLogSettings() = outcomes.openCallLogSettings()
+
+    private fun CallRecord.toEntry(name: String?): HistoryEntry {
         val local = timestamp.toLocalDateTime(timeZone)
         return HistoryEntry(
             id = id,
             number = number?.let(normalizer::format),
+            name = name,
+            outcome = outcome,
             reason = reason,
             rule = rule,
             date = local.date,
             time = "${local.hour.twoDigits()}:${local.minute.twoDigits()}",
         )
     }
+
+    private data class ViewState(
+        val filter: HistoryFilter = HistoryFilter.ALL,
+        val selectedId: Long? = null,
+        val confirmingClear: Boolean = false,
+        val callLogDenied: Boolean = false,
+    )
 }
 
 private fun HistoryEntry.matches(filter: HistoryFilter) =
     when (filter) {
         HistoryFilter.ALL -> true
-        HistoryFilter.CONTACTS_ONLY -> reason == RejectionReason.CONTACTS_ONLY
-        HistoryFilter.RULES -> reason != RejectionReason.CONTACTS_ONLY
+        HistoryFilter.ANSWERED -> outcome == CallOutcome.ANSWERED
+        HistoryFilter.MISSED -> outcome == CallOutcome.MISSED
+        HistoryFilter.REJECTED -> outcome == CallOutcome.REJECTED
     }
 
 private fun LocalDate.label(today: LocalDate): DayLabel =

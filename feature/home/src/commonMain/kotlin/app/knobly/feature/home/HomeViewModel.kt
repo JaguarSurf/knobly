@@ -71,10 +71,10 @@ class HomeViewModel(
             .map { summary ->
                 val today = clock.now().toLocalDateTime(timeZone).date
                 CallsActivity(
-                    today = summary.today,
-                    lastSevenDays = summary.lastSevenDays,
+                    today = summary.rejectedToday,
+                    lastSevenDays = summary.rejectedLastSevenDays,
                     latest =
-                        summary.latest?.let { call ->
+                        summary.latestRejected?.let { call ->
                             val local = call.timestamp.toLocalDateTime(timeZone)
                             LatestRejection(
                                 number = call.number?.let(normalizer::format),

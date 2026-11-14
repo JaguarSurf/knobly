@@ -14,8 +14,21 @@ interface CallEventDao {
     @Query("SELECT * FROM call_events ORDER BY timestamp_utc DESC, id DESC")
     fun observeAll(): Flow<List<CallEventEntity>>
 
-    @Query("SELECT * FROM call_events ORDER BY timestamp_utc DESC, id DESC LIMIT 1")
-    fun observeLatest(): Flow<CallEventEntity?>
+    @Query("SELECT * FROM call_events WHERE action = 'REJECT' ORDER BY timestamp_utc DESC, id DESC LIMIT 1")
+    fun observeLatestRejected(): Flow<CallEventEntity?>
+
+    /** Allowed calls at or after [timestampUtc] whose outcome is not known yet, oldest first. */
+    @Query(
+        "SELECT * FROM call_events WHERE action = 'ALLOW' AND outcome IS NULL AND timestamp_utc >= :timestampUtc " +
+            "ORDER BY timestamp_utc",
+    )
+    suspend fun pendingOutcomes(timestampUtc: Long): List<CallEventEntity>
+
+    @Query("UPDATE call_events SET outcome = :outcome WHERE id = :id")
+    suspend fun setOutcome(
+        id: Long,
+        outcome: String,
+    )
 
     /** Events at or after [timestampUtc] (epoch milliseconds), newest first. */
     @Query("SELECT * FROM call_events WHERE timestamp_utc >= :timestampUtc ORDER BY timestamp_utc DESC, id DESC")
