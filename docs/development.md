@@ -139,9 +139,14 @@ adb install -r app/android/build/outputs/apk/debug/knobly-debug.apk
 # Grant the call screening role without the dialog (the dialog itself is opened by "Enable call filtering" in the Filters tab):
 adb shell cmd role add-role-holder android.app.role.CALL_SCREENING app.knobly
 # Simulate incoming calls:
-adb emu gsm call 03031234567      # rejected by the spike rules
-adb emu gsm call 03047654321      # silenced
-adb emu gsm call 11912345678      # allowed
+# (filters are off by default: turn them on in the Filters tab first, e.g. a "Começa com 0303" rule)
+adb emu gsm call 03031234567      # rejected by a 0303 prefix rule
+adb emu gsm call 11988887777      # rings
+# Add a contact, to check that contacts always pass:
+adb shell content insert --uri content://com.android.contacts/raw_contacts --bind account_type:n: --bind account_name:n:
+adb shell content insert --uri content://com.android.contacts/data --bind raw_contact_id:i:1 \
+    --bind mimetype:s:vnd.android.cursor.item/phone_v2 --bind data1:s:+5511912345678 --bind data2:i:2
+adb emu gsm call 11912345678      # allowed (contact)
 # Screening decisions and timing (no phone numbers are logged):
 adb logcat -s KnoblyScreening
 ```
@@ -180,7 +185,7 @@ Download the `knobly-debug-apk` artifact from a GitHub Actions run, copy the APK
 
 ### First run on the phone
 
-The app opens on the tabs. While call filtering is off, the **Filters** tab shows a "Call filtering is off" card: **Enable call filtering** asks Android to make Knobly the "caller ID & spam app" (`ROLE_CALL_SCREENING`). The system's phone app stays the default dialer; the role only lets Knobly check incoming calls before they ring. After that, incoming calls are screened by the spike rules (`0303` rejected, `0304` silenced). Decisions are logged to `adb logcat -s KnoblyScreening`.
+The app opens on the tabs. While call filtering is off, the **Filters** tab shows a "Call filtering is off" card: **Enable call filtering** asks Android to make Knobly the "caller ID & spam app" (`ROLE_CALL_SCREENING`). The system's phone app stays the default dialer; the role only lets Knobly check incoming calls before they ring. After that, incoming calls are screened by the filters turned on in the same tab ("Aceitar somente contatos" and custom rules); all filters are off by default. Decisions are logged to `adb logcat -s KnoblyScreening`.
 
 ## Tests and quality
 

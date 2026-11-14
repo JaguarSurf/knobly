@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Contacts always pass, and "contacts only" rejects everyone else. Requested by the app when the user turns a
+         filter on; never READ_CALL_LOG. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
     <application>
         <!-- Woken up by the system for every incoming call once Knobly holds ROLE_CALL_SCREENING (API 29+).
              No foreground service is needed. -->

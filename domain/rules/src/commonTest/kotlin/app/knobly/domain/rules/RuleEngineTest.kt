@@ -7,7 +7,6 @@ import app.knobly.core.model.PhoneNumber
 import app.knobly.core.model.RuleId
 import app.knobly.domain.rules.call.HiddenNumberRule
 import app.knobly.domain.rules.call.PrefixRule
-import app.knobly.domain.rules.call.SpikeRules
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -95,10 +94,13 @@ class RuleEngineTest {
     }
 
     @Test
-    fun `prefix rule also matches the E164 form`() {
-        val number = PhoneNumber(raw = "+5511912345678", e164 = "+5511912345678", national = "11912345678")
-        val engine = RuleEngine { listOf(prefix("sp", 1, Action.SILENCE, "5511")) }
-        assertEquals(Action.SILENCE, engine.evaluate(IncomingCall(number, now)).action)
+    fun `prefix with a plus is a country code and only matches the E164 form`() {
+        val saoPaulo = PhoneNumber(raw = "+5511912345678", e164 = "+5511912345678", national = "11912345678")
+        val usa = PhoneNumber(raw = "+16502530000", e164 = "+16502530000", national = "6502530000")
+        val engine = RuleEngine { listOf(prefix("us", 1, Action.REJECT, "+1")) }
+        assertEquals(Action.REJECT, engine.evaluate(IncomingCall(usa, now)).action)
+        // "+1" must not match DDD 11
+        assertEquals(Action.ALLOW, engine.evaluate(IncomingCall(saoPaulo, now)).action)
     }
 
     @Test
@@ -115,13 +117,5 @@ class RuleEngineTest {
             }
         assertEquals(Action.REJECT, engine.evaluate(IncomingCall(telemarketing, now)).action)
         assertEquals(Action.SILENCE, engine.evaluate(IncomingCall(saoPaulo, now)).action)
-    }
-
-    @Test
-    fun `spike rules reject 0303 and silence 0304`() {
-        val engine = RuleEngine { SpikeRules.calls }
-        assertEquals(Action.REJECT, engine.evaluate(call("03031234567")).action)
-        assertEquals(Action.SILENCE, engine.evaluate(call("03047654321")).action)
-        assertEquals(Action.ALLOW, engine.evaluate(call("11912345678")).action)
     }
 }

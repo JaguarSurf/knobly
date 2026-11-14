@@ -1,5 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="filters_title">Filtros</string>
-    <string name="filters_empty_message">Suas regras de filtro de chamadas aparecerão aqui.</string>
+    <string name="filters_status_none">Nenhum filtro ativo</string>
+    <string name="filters_module_calls">Chamadas</string>
+    <string name="filters_module_messages">Mensagens</string>
+    <string name="filters_module_notifications">Notificações</string>
+    <string name="filters_contacts_only_title">Aceitar somente contatos</string>
+    <string name="filters_contacts_only_subtitle">Rejeita quem não está na sua agenda, inclusive números ocultos.</string>
+    <string name="filters_contacts_denied">O Knobly precisa de acesso aos seus contatos para este filtro.</string>
+    <string name="filters_open_settings">Abrir configurações</string>
+    <string name="filters_custom_title">Regras personalizadas</string>
+    <string name="filters_custom_subtitle">Seus contatos sempre passam.</string>
+    <string name="filters_custom_contacts_note">Sem acesso aos contatos, eles não ficam protegidos das suas regras.</string>
+    <string name="filters_no_rules">Nenhuma regra ainda</string>
+    <string name="filters_no_rules_hint">Crie regras como “começa com 0303” para rejeitar telemarketing.</string>
+    <string name="filters_new_rule">Nova regra</string>
+    <string name="rule_type_prefix">Começa com</string>
+    <string name="rule_type_exact">Número exato</string>
+    <string name="rule_type_hidden">Número oculto</string>
+    <string name="rule_type_regex">Expressão regular</string>
+    <string name="rule_type_hidden_description">Chamadas sem número identificado</string>
+    <string name="rule_type_prefix_short">Começa com</string>
+    <string name="rule_type_exact_short">Número</string>
+    <string name="rule_type_hidden_short">Oculto</string>
+    <string name="rule_type_regex_short">Regex</string>
+    <string name="rule_editor_new_title">Nova regra</string>
+    <string name="rule_editor_edit_title">Editar regra</string>
+    <string name="rule_editor_back">Voltar</string>
+    <string name="rule_editor_type">Tipo de regra</string>
+    <string name="rule_editor_value_prefix">Começa com</string>
+    <string name="rule_editor_value_exact">Número</string>
+    <string name="rule_editor_value_regex">Expressão regular · avançado</string>
+    <string name="rule_editor_help_prefix">O 0 inicial é opcional: 0303 também pega números recebidos como +55 303…</string>
+    <string name="rule_editor_help_exact">Comparado no formato internacional: (11) 4002-8922 e +55 11 4002-8922 são o mesmo número.</string>
+    <string name="rule_editor_help_hidden">Não precisa de valor: rejeita toda chamada sem número identificado.</string>
+    <string name="rule_editor_help_regex">Comparada com os dígitos do número, ex.: ^0800. Somente Android.</string>
+    <string name="rule_editor_label">Apelido (opcional)</string>
+    <string name="rule_editor_test">Teste um número</string>
+    <string name="rule_editor_test_placeholder">ex.: 0303 123 4567</string>
+    <string name="rule_editor_test_rejected">Seria rejeitada</string>
+    <string name="rule_editor_test_allowed">Tocaria normalmente</string>
+    <string name="rule_editor_save">Salvar regra</string>
+    <string name="rule_editor_delete">Excluir regra</string>
+    <string name="rule_error_empty">Informe um valor.</string>
+    <string name="rule_error_invalid_prefix">Use apenas dígitos (e + no início).</string>
+    <string name="rule_error_invalid_number">Isto não parece um número de telefone.</string>
+    <string name="rule_error_invalid_regex">Expressão regular inválida.</string>
+    <string name="rule_error_too_long">Longo demais (até 100 caracteres).</string>
+    <plurals name="filters_status_active">
+        <item quantity="one">%1$d filtro ativo</item>
+        <item quantity="other">%1$d filtros ativos</item>
+    </plurals>
 </resources>

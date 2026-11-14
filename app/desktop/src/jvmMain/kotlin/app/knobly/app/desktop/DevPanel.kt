@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,8 +31,10 @@ import app.knobly.core.designsystem.KnoblyTheme
 import app.knobly.core.model.Decision
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.phone.PhoneNumberNormalizer
-import app.knobly.domain.rules.RuleEngine
+import app.knobly.domain.rules.call.CallScreener
+import app.knobly.platform.fake.FakeContactsAccess
 import app.knobly.platform.fake.FakeScreeningRoleController
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.time.Clock
 
@@ -48,15 +51,19 @@ private data class SimulatedCall(
 @Composable
 fun DevPanel(modifier: Modifier = Modifier) {
     val roleController = koinInject<FakeScreeningRoleController>()
-    val engine = koinInject<RuleEngine<IncomingCall>>()
+    val contacts = koinInject<FakeContactsAccess>()
+    val screener = koinInject<CallScreener>()
     val normalizer = koinInject<PhoneNumberNormalizer>()
+    val scope = rememberCoroutineScope()
     val roleHeld by roleController.isRoleHeld.collectAsState()
+    val contactsGranted by contacts.isGranted.collectAsState()
     var number by remember { mutableStateOf("0303 123 4567") }
     val calls = remember { mutableStateListOf<SimulatedCall>() }
 
     fun simulate(raw: String?) {
         val call = IncomingCall(normalizer.normalize(raw), Clock.System.now())
-        calls.add(0, SimulatedCall(raw ?: "(hidden)", call, engine.evaluate(call)))
+        // Same path as the Android CallScreeningService: in-memory rules + contacts + engine.
+        scope.launch { calls.add(0, SimulatedCall(raw ?: "(hidden)", call, screener.screen(call))) }
     }
 
     KnoblyTheme {
@@ -70,6 +77,13 @@ fun DevPanel(modifier: Modifier = Modifier) {
                 ) {
                     Switch(checked = roleHeld, onCheckedChange = roleController::setRoleHeld)
                     Text("Call screening role held (fake)")
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Switch(checked = contactsGranted, onCheckedChange = contacts::setGranted)
+                    Text("Contacts permission granted (fake contact: (11) 91234-5678)")
                 }
 
                 HorizontalDivider()

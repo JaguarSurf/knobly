@@ -18,4 +18,10 @@
     <string name="home_module_notifications">Notificações</string>
     <string name="home_coming_soon">Em breve</string>
     <string name="home_more_controls">Novos controles chegam aqui</string>
+    <string name="home_status_no_filters">Nenhum filtro ativo</string>
+    <string name="home_calls_no_filters">Ligue um filtro na aba Filtros</string>
+    <plurals name="home_active_filters">
+        <item quantity="one">%1$d filtro ativo</item>
+        <item quantity="other">%1$d filtros ativos</item>
+    </plurals>
 </resources>

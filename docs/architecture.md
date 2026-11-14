@@ -73,7 +73,7 @@ flowchart TD
 | `:core:model` | Entities: `Rule`, `Event`, `IncomingCall`, `Decision`, `CallEvent` |
 | `:core:phone` | Phone number normalization and comparison (E.164, +55, DDD area codes, 9th digit, hidden number) |
 | `:core:database` | Room: DAOs, migrations, aggregation queries |
-| `:core:datastore` | User preferences |
+| `:core:datastore` | Persisted JSON documents (`DocumentStore`: call filter settings, later other preferences) |
 | `:core:designsystem` | Theme, colors, typography, reusable components |
 | `:domain:rules` | Rule engine: evaluation, ordering, caching, rule repository |
 | `:domain:stats` | Statistics use cases (aggregation by period) |
@@ -112,9 +112,11 @@ interface ScreeningRoleController {
     suspend fun requestRole(): Boolean
 }
 
-// Planned, together with the "contacts only" rule
-interface ContactsSource {
-    suspend fun isContact(number: PhoneNumber): Boolean
+interface ContactsAccess {
+    val isGranted: StateFlow<Boolean>
+    suspend fun requestAccess(): Boolean // shows the system permission dialog
+    fun openAppSettings()
+    fun isContact(number: PhoneNumber): Boolean // blocking lookup, called off the main thread
 }
 ```
 
@@ -122,9 +124,11 @@ interface ContactsSource {
 |---|---|---|---|
 | `ScreeningRoleController` | `AndroidScreeningRoleController` (`RoleManager.ROLE_CALL_SCREENING`) | `IosScreeningRoleController` (no role; guide to Settings) | `FakeScreeningRoleController` (toggle) |
 | `PhoneNumberNormalizer` (`:core:phone`) | `LibPhoneNumberNormalizer` | PhoneNumberKit (planned, from Swift) | `LibPhoneNumberNormalizer` |
-| `ContactsSource` (planned) | `ContactsContract` | Contacts framework (contacts already win on iOS) | In-memory fake |
+| `ContactsAccess` | `AndroidContactsAccess` (`READ_CONTACTS`, `ContactsContract.PhoneLookup`) | `IosContactsAccess` (stub, never granted; contacts already win on iOS) | `FakeContactsAccess` (one fake contact, permission toggle) |
 
-Incoming calls are not a port: on Android the `CallScreeningService` calls the rule engine directly (it must answer within seconds), and the desktop harness's incoming call simulator does the same with the same engine and normalizer. iOS has no per-call callback.
+Incoming calls are not a port: on Android the `CallScreeningService` calls `CallScreener` (`:domain:rules`) directly (it must answer within seconds), and the desktop harness's incoming call simulator does the same with the same screener and normalizer. iOS has no per-call callback.
+
+Call filter settings live in one JSON document behind `DocumentStore<CallFilterSettings>` (`:core:datastore`, DataStore + okio on every target; `InMemoryDocumentStore` in tests). `CallRulesProvider` turns it into engine rules kept in memory, and `CallScreener` evaluates them with a per-call, memoized contacts lookup and a timeout that fails open.
 
 Koin modules per app wire the real adapters (`:app:android`, `iosApp`) or the fakes (`:app:desktop`, tests). `:feature:*` modules never call platform APIs directly.
 

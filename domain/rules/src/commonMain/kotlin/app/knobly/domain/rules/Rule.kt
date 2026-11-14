@@ -8,8 +8,8 @@ import app.knobly.core.model.RuleId
 /**
  * A filter rule (Strategy). Each rule type is one implementation; adding a type never changes [RuleEngine].
  *
- * [matches] runs inside the Android `CallScreeningService`, which must answer within a few seconds:
- * it must be fast, synchronous and free of I/O (use [RuleContext] for anything that needs data).
+ * [matches] runs while the Android `CallScreeningService` waits for an answer: it must be fast and must not touch
+ * the database (rules are prepared in memory; see [app.knobly.domain.rules.call.CallRulesProvider]).
  */
 interface Rule<in E : Event> {
     val id: RuleId
@@ -23,16 +23,25 @@ interface Rule<in E : Event> {
     ): Boolean
 }
 
-/** Data a rule may need while matching, served from in-memory caches. */
+/** Data a rule may need while matching. */
 data class RuleContext(
-    val contacts: ContactLookup = ContactLookup.None,
+    val contacts: ContactLookup = ContactLookup.Unavailable,
 )
 
-/** In-memory view of the user's contacts. */
-fun interface ContactLookup {
+/** Whether a number is saved in the user's contacts. */
+interface ContactLookup {
+    /** `false` when Knobly cannot read the contacts (e.g. permission revoked): contact-based rules then do nothing. */
+    val isAvailable: Boolean
+
+    /** May query the system contacts: never call on the main thread. */
     fun isContact(number: PhoneNumber): Boolean
 
     companion object {
-        val None = ContactLookup { false }
+        val Unavailable: ContactLookup =
+            object : ContactLookup {
+                override val isAvailable = false
+
+                override fun isContact(number: PhoneNumber) = false
+            }
     }
 }

@@ -1,5 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="filters_title">Filters</string>
-    <string name="filters_empty_message">Your call filter rules will be listed here.</string>
+    <string name="filters_status_none">No active filters</string>
+    <string name="filters_module_calls">Calls</string>
+    <string name="filters_module_messages">Messages</string>
+    <string name="filters_module_notifications">Notifications</string>
+    <string name="filters_contacts_only_title">Accept only contacts</string>
+    <string name="filters_contacts_only_subtitle">Rejects everyone who is not in your contacts, including hidden numbers.</string>
+    <string name="filters_contacts_denied">Knobly needs access to your contacts for this filter.</string>
+    <string name="filters_open_settings">Open settings</string>
+    <string name="filters_custom_title">Custom rules</string>
+    <string name="filters_custom_subtitle">Your contacts always pass.</string>
+    <string name="filters_custom_contacts_note">Without access to your contacts, they are not protected from your rules.</string>
+    <string name="filters_no_rules">No rules yet</string>
+    <string name="filters_no_rules_hint">Create rules like “starts with 0303” to reject telemarketing.</string>
+    <string name="filters_new_rule">New rule</string>
+    <string name="rule_type_prefix">Starts with</string>
+    <string name="rule_type_exact">Exact number</string>
+    <string name="rule_type_hidden">Hidden number</string>
+    <string name="rule_type_regex">Regular expression</string>
+    <string name="rule_type_hidden_description">Calls without a caller ID</string>
+    <string name="rule_type_prefix_short">Starts with</string>
+    <string name="rule_type_exact_short">Number</string>
+    <string name="rule_type_hidden_short">Hidden</string>
+    <string name="rule_type_regex_short">Regex</string>
+    <string name="rule_editor_new_title">New rule</string>
+    <string name="rule_editor_edit_title">Edit rule</string>
+    <string name="rule_editor_back">Back</string>
+    <string name="rule_editor_type">Rule type</string>
+    <string name="rule_editor_value_prefix">Starts with</string>
+    <string name="rule_editor_value_exact">Number</string>
+    <string name="rule_editor_value_regex">Regular expression · advanced</string>
+    <string name="rule_editor_help_prefix">The leading 0 is optional: 0303 also matches numbers received as +55 303…</string>
+    <string name="rule_editor_help_exact">Compared in international format: (11) 4002-8922 and +55 11 4002-8922 are the same number.</string>
+    <string name="rule_editor_help_hidden">Needs no value: rejects every call without caller ID.</string>
+    <string name="rule_editor_help_regex">Matched against the number’s digits, e.g. ^0800. Android only.</string>
+    <string name="rule_editor_label">Nickname (optional)</string>
+    <string name="rule_editor_test">Try a number</string>
+    <string name="rule_editor_test_placeholder">e.g. 0303 123 4567</string>
+    <string name="rule_editor_test_rejected">Would be rejected</string>
+    <string name="rule_editor_test_allowed">Would ring</string>
+    <string name="rule_editor_save">Save rule</string>
+    <string name="rule_editor_delete">Delete rule</string>
+    <string name="rule_error_empty">Enter a value.</string>
+    <string name="rule_error_invalid_prefix">Use only digits (and + at the start).</string>
+    <string name="rule_error_invalid_number">This does not look like a phone number.</string>
+    <string name="rule_error_invalid_regex">Invalid regular expression.</string>
+    <string name="rule_error_too_long">Too long (up to 100 characters).</string>
+    <plurals name="filters_status_active">
+        <item quantity="one">%1$d active filter</item>
+        <item quantity="other">%1$d active filters</item>
+    </plurals>
 </resources>

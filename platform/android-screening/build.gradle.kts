@@ -7,5 +7,6 @@ dependencies {
     api(projects.core.phone)
     implementation(libs.androidx.activity)
     implementation(libs.koin.android)
-    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.core.ktx)
 }

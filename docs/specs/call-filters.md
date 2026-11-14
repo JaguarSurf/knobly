@@ -1,6 +1,6 @@
 # Spec: call filters (Filters tab)
 
-- **Status:** agreed, not implemented yet
+- **Status:** implemented on Android (iOS: see [platforms.md](../platforms.md))
 - **Date:** 2026-11-14
 
 ## Goal
@@ -43,7 +43,7 @@ Each rule can be paused (toggle), edited and deleted. Rules are not reordered.
 The only action for now. The call is answered by the `CallScreeningService` with `setDisallowCall(true)`, `setRejectCall(true)`, `setSkipCallLog(true)` and `setSkipNotification(true)`:
 
 - the phone does not ring, show the call or notify (no "missed call");
-- the call does not appear in the system call log;
+- the call is hidden from the system call log as far as Android allows: the platform still records it with type `CallLog.Calls.BLOCKED_TYPE` regardless of `setSkipCallLog`, and whether the phone app shows blocked calls depends on the phone app;
 - it **is** recorded in Knobly's own History tab, so the user can check what was blocked.
 
 Outside the app's control: the caller hears busy/voicemail depending on the carrier, and some manufacturers may behave differently (to be checked on real devices, see [roadmap.md](../roadmap.md)).
@@ -56,10 +56,11 @@ Outside the app's control: the caller hears busy/voicemail depending on the carr
 
 ## Data and behavior
 
-- Toggles and rules are persisted (rules as `type + params JSON + enabled`, see [ADR-0004](../adr/0004-generic-rule-engine.md)) and kept in an in-memory cache read by the `CallScreeningService`. Changes apply to the next call immediately.
-- Contacts are looked up through the `ContactsSource` port, backed by an in-memory index of normalized numbers refreshed when the contacts change.
+- Toggles and rules are persisted as one JSON document (`CallFilterSettings`, through the `DocumentStore` of `:core:datastore`; each rule is `id + type + value + label + enabled`, see [ADR-0004](../adr/0004-generic-rule-engine.md)). `CallRulesProvider` keeps the engine rules built from it in memory for the `CallScreeningService`; changes apply to the next call immediately.
+- Contacts are looked up through the `ContactsAccess` port, once per call and only when a filter is on (Android: `ContactsContract.PhoneLookup`, which handles number formats itself). Without the permission the lookup is unavailable and **fails open**: "contacts only" does nothing instead of rejecting every call.
+- `CallScreener` answers within 3 seconds at most: if reading the settings or the contacts takes longer, the call rings (fail open).
 - Regex rules are validated when saved (invalid patterns are rejected) and compiled once; pattern length is limited to keep matching fast inside the service.
-- The hard-coded spike rules (`SpikeRules`, 0303/0304) are removed.
+- The hard-coded spike rules (`SpikeRules`, 0303/0304) were removed; with every filter off, every call rings.
 
 ## UI language
 

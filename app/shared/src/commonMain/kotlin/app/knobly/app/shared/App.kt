@@ -1,7 +1,7 @@
 package app.knobly.app.shared
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import app.knobly.app.shared.resources.Res
 import app.knobly.app.shared.resources.nav_filters
 import app.knobly.app.shared.resources.nav_history
@@ -28,6 +29,7 @@ import app.knobly.core.designsystem.KnoblyNavBar
 import app.knobly.core.designsystem.KnoblyNavItem
 import app.knobly.core.designsystem.KnoblyTheme
 import app.knobly.feature.calls.FiltersScreen
+import app.knobly.feature.calls.RuleEditorScreen
 import app.knobly.feature.history.HistoryScreen
 import app.knobly.feature.home.HomeScreen
 import app.knobly.feature.onboarding.CallFilteringCard
@@ -44,6 +46,11 @@ import kotlin.reflect.KClass
 @Serializable data object HistoryRoute
 
 @Serializable data object StatsRoute
+
+/** The rule editor; `ruleId` null creates a new rule. */
+@Serializable data class RuleEditorRoute(
+    val ruleId: String? = null,
+)
 
 /** The bottom navigation tabs. */
 enum class TopLevelDestination(
@@ -90,6 +97,8 @@ private fun MainScaffold(modifier: Modifier = Modifier) {
         modifier = modifier,
         containerColor = Color.Transparent,
         bottomBar = {
+            // Only on the top-level tabs (hidden in the rule editor).
+            if (selectedIndex < 0) return@Scaffold
             KnoblyNavBar(
                 items = destinations.map { KnoblyNavItem(stringResource(it.label), it.icon, it.testTag) },
                 selectedIndex = selectedIndex,
@@ -101,16 +110,23 @@ private fun MainScaffold(modifier: Modifier = Modifier) {
         NavHost(
             navController = navController,
             startDestination = HomeRoute,
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
             composable<HomeRoute> { HomeScreen(onOpenCalls = { navigateTo(TopLevelDestination.FILTERS) }) }
             composable<FiltersRoute> {
                 // The app layer composes features: the call filtering card (:feature:onboarding) sits on top of the
                 // Filters tab (:feature:calls) while filtering is off. Features never depend on each other.
-                Column(Modifier.fillMaxSize()) {
-                    CallFilteringCard(Modifier.padding(16.dp))
-                    FiltersScreen(Modifier.weight(1f))
-                }
+                FiltersScreen(
+                    onNewRule = { navController.navigate(RuleEditorRoute()) },
+                    onEditRule = { id -> navController.navigate(RuleEditorRoute(id)) },
+                    topContent = { CallFilteringCard() },
+                )
+            }
+            composable<RuleEditorRoute> { entry ->
+                RuleEditorScreen(
+                    ruleId = entry.toRoute<RuleEditorRoute>().ruleId,
+                    onClose = { navController.popBackStack() },
+                )
             }
             composable<HistoryRoute> { HistoryScreen() }
             composable<StatsRoute> { StatsScreen() }

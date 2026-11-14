@@ -18,4 +18,10 @@
     <string name="home_module_notifications">Notifications</string>
     <string name="home_coming_soon">Coming soon</string>
     <string name="home_more_controls">New controls will appear here</string>
+    <string name="home_status_no_filters">No active filters</string>
+    <string name="home_calls_no_filters">Turn on a filter in the Filters tab</string>
+    <plurals name="home_active_filters">
+        <item quantity="one">%1$d active filter</item>
+        <item quantity="other">%1$d active filters</item>
+    </plurals>
 </resources>

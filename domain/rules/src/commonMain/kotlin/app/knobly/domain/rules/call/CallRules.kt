@@ -2,6 +2,7 @@ package app.knobly.domain.rules.call
 
 import app.knobly.core.model.Action
 import app.knobly.core.model.IncomingCall
+import app.knobly.core.model.PhoneNumber
 import app.knobly.core.model.RuleId
 import app.knobly.domain.rules.Rule
 import app.knobly.domain.rules.RuleContext
@@ -9,9 +10,10 @@ import app.knobly.domain.rules.RuleContext
 /**
  * Matches calls whose number starts with one of [prefixes] (e.g. `0303` telemarketing, `0304` donations).
  *
- * A prefix is compared with the received digits, the E.164 digits and the national number with and without the
- * trunk prefix `0`, because normalization drops it: `0303 123 4567` becomes national `3031234567`. So `0303`
- * matches it, and `011` matches every number from DDD 11.
+ * A prefix starting with `+` is a country code and is compared with the E.164 form only (`+1` never matches DDD 11).
+ * Other prefixes are compared with the received digits and with the national number with and without the trunk
+ * prefix `0`, because normalization drops it: `0303 123 4567` becomes national `3031234567`. So `0303` matches it,
+ * and `011` matches every number from DDD 11.
  */
 data class PrefixRule(
     override val id: RuleId,
@@ -25,14 +27,13 @@ data class PrefixRule(
         context: RuleContext,
     ): Boolean {
         val number = event.number ?: return false
-        val candidates =
-            listOfNotNull(
-                number.national,
-                "0${number.national}",
-                number.raw.removePrefix("+"),
-                number.e164?.removePrefix("+"),
-            )
-        return prefixes.any { prefix -> candidates.any { it.startsWith(prefix) } }
+        return prefixes.any { prefix ->
+            if (prefix.startsWith("+")) {
+                listOfNotNull(number.e164, number.raw.takeIf { it.startsWith("+") }).any { it.startsWith(prefix) }
+            } else {
+                listOf(number.national, "0${number.national}", number.raw).any { it.startsWith(prefix) }
+            }
+        }
     }
 }
 
@@ -49,14 +50,89 @@ data class HiddenNumberRule(
     ): Boolean = event.number == null
 }
 
+/** Matches one specific number: same E.164 form when both are known, otherwise the same national number. */
+data class ExactNumberRule(
+    override val id: RuleId,
+    override val priority: Int,
+    override val action: Action,
+    val target: PhoneNumber,
+    override val enabled: Boolean = true,
+) : Rule<IncomingCall> {
+    override fun matches(
+        event: IncomingCall,
+        context: RuleContext,
+    ): Boolean {
+        val number = event.number ?: return false
+        val targetE164 = target.e164
+        val numberE164 = number.e164
+        return if (targetE164 != null &&
+            numberE164 != null
+        ) {
+            targetE164 == numberE164
+        } else {
+            target.national == number.national
+        }
+    }
+}
+
 /**
- * Temporary, hard-coded rules for the technical spike, until rules are persisted and edited in the UI:
- * reject `0303` (telemarketing) and silence `0304` (donations).
+ * Matches when [pattern] is found in any form of the number: as received (`+5511912345678`), E.164, national
+ * (`11912345678`) and national with the trunk prefix (`011912345678`). Use `^`/`$` to anchor.
  */
-object SpikeRules {
-    val calls: List<Rule<IncomingCall>> =
-        listOf(
-            PrefixRule(RuleId("spike-0303"), priority = 10, action = Action.REJECT, prefixes = listOf("0303")),
-            PrefixRule(RuleId("spike-0304"), priority = 20, action = Action.SILENCE, prefixes = listOf("0304")),
-        )
+class RegexRule(
+    override val id: RuleId,
+    override val priority: Int,
+    override val action: Action,
+    val pattern: Regex,
+    override val enabled: Boolean = true,
+) : Rule<IncomingCall> {
+    override fun matches(
+        event: IncomingCall,
+        context: RuleContext,
+    ): Boolean {
+        val number = event.number ?: return false
+        return listOfNotNull(number.raw, number.e164, number.national, "0${number.national}").any {
+            pattern.containsMatchIn(it)
+        }
+    }
+}
+
+/** "Contacts always pass": allows any number saved in the contacts, before every reject rule. */
+data class ContactAllowRule(
+    override val id: RuleId,
+    override val priority: Int,
+    override val enabled: Boolean = true,
+) : Rule<IncomingCall> {
+    override val action: Action = Action.ALLOW
+
+    override fun matches(
+        event: IncomingCall,
+        context: RuleContext,
+    ): Boolean {
+        val number = event.number ?: return false
+        return context.contacts.isAvailable && context.contacts.isContact(number)
+    }
+}
+
+/**
+ * "Contacts only": rejects hidden numbers and numbers not in the contacts. Does nothing when the contacts cannot be
+ * read (fails open, so a revoked permission never blocks every call).
+ */
+data class NotInContactsRule(
+    override val id: RuleId,
+    override val priority: Int,
+    override val action: Action,
+    override val enabled: Boolean = true,
+) : Rule<IncomingCall> {
+    override fun matches(
+        event: IncomingCall,
+        context: RuleContext,
+    ): Boolean {
+        val number = event.number
+        return when {
+            !context.contacts.isAvailable -> false
+            number == null -> true
+            else -> !context.contacts.isContact(number)
+        }
+    }
 }

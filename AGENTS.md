@@ -106,4 +106,4 @@ Notes for agents:
 
 ## Current status
 
-Phase: **technical spike**. The KMP skeleton builds an installable APK with the three tabs, an "Enable call filtering" card for `ROLE_CALL_SCREENING` in the Filters tab (no first-run screen) and a minimal `CallScreeningService` running hard-coded spike rules (`SpikeRules`). See [roadmap.md](docs/roadmap.md).
+Phase: **Android MVP**. The app has four tabs (Início, Filtros, Histórico, Estatísticas) in pt-BR and English, the design system and the launcher icon. The Filters tab implements [specs/call-filters.md](docs/specs/call-filters.md): the call screening role card, "contacts only" (with the `READ_CONTACTS` flow), and custom rules (prefix, exact number, hidden number, regex) persisted as JSON and screened by `CallScreener` in the `CallScreeningService`. History and Statistics are still placeholders. See [roadmap.md](docs/roadmap.md).

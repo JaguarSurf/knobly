@@ -47,8 +47,10 @@ import app.knobly.core.designsystem.KnoblyRoundIcon
 import app.knobly.core.designsystem.KnoblyStatus
 import app.knobly.core.designsystem.KnoblyTheme
 import app.knobly.feature.home.resources.Res
+import app.knobly.feature.home.resources.home_active_filters
 import app.knobly.feature.home.resources.home_calls
 import app.knobly.feature.home.resources.home_calls_enable
+import app.knobly.feature.home.resources.home_calls_no_filters
 import app.knobly.feature.home.resources.home_calls_off
 import app.knobly.feature.home.resources.home_calls_on
 import app.knobly.feature.home.resources.home_calls_unavailable
@@ -63,10 +65,12 @@ import app.knobly.feature.home.resources.home_module_messages
 import app.knobly.feature.home.resources.home_module_notifications
 import app.knobly.feature.home.resources.home_more_controls
 import app.knobly.feature.home.resources.home_open_calls
+import app.knobly.feature.home.resources.home_status_no_filters
 import app.knobly.feature.home.resources.home_status_off
 import app.knobly.feature.home.resources.home_status_protected
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Clock
@@ -78,7 +82,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel(),
 ) {
-    val callFilteringOn by viewModel.isCallFilteringOn.collectAsStateWithLifecycle()
+    val callsStatus by viewModel.callsStatus.collectAsStateWithLifecycle()
     val hour =
         Clock.System
             .now()
@@ -87,7 +91,7 @@ fun HomeScreen(
     HomeContent(
         dayPart = DayPart.fromHour(hour),
         isCallFilteringAvailable = viewModel.isCallFilteringAvailable,
-        isCallFilteringOn = callFilteringOn,
+        callsStatus = callsStatus,
         onEnableCallFiltering = viewModel::enableCallFiltering,
         onOpenCalls = onOpenCalls,
         modifier = modifier,
@@ -98,7 +102,7 @@ fun HomeScreen(
 fun HomeContent(
     dayPart: DayPart,
     isCallFilteringAvailable: Boolean,
-    isCallFilteringOn: Boolean,
+    callsStatus: CallsStatus,
     onEnableCallFiltering: () -> Unit,
     onOpenCalls: () -> Unit,
     modifier: Modifier = Modifier,
@@ -137,7 +141,7 @@ fun HomeContent(
             )
         }
 
-        CallsHeroCard(isCallFilteringAvailable, isCallFilteringOn, onEnableCallFiltering)
+        CallsHeroCard(isCallFilteringAvailable, callsStatus, onEnableCallFiltering)
 
         Text(
             stringResource(Res.string.home_controls),
@@ -147,12 +151,9 @@ fun HomeContent(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ModuleTile(
                     title = stringResource(Res.string.home_calls),
-                    subtitle =
-                        stringResource(
-                            if (isCallFilteringOn) Res.string.home_status_protected else Res.string.home_status_off,
-                        ),
+                    subtitle = callsStatus.shortText(),
                     icon = KnoblyIcons.Phone,
-                    highlighted = isCallFilteringOn,
+                    highlighted = callsStatus.isProtected,
                     onClick = onOpenCalls,
                     onClickLabel = stringResource(Res.string.home_open_calls),
                     modifier = Modifier.weight(1f).testTag(HomeTestTags.CALLS_TILE),
@@ -180,7 +181,7 @@ fun HomeContent(
 @Composable
 private fun CallsHeroCard(
     isAvailable: Boolean,
-    isOn: Boolean,
+    status: CallsStatus,
     onEnable: () -> Unit,
 ) {
     val c = KnoblyTheme.colors
@@ -188,15 +189,22 @@ private fun CallsHeroCard(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 KnoblyStatus(
-                    stringResource(if (isOn) Res.string.home_status_protected else Res.string.home_status_off),
-                    active = isOn,
+                    stringResource(
+                        when {
+                            status.isProtected -> Res.string.home_status_protected
+                            status.screeningOn -> Res.string.home_status_no_filters
+                            else -> Res.string.home_status_off
+                        },
+                    ),
+                    active = status.isProtected,
                 )
                 Text(stringResource(Res.string.home_calls), style = MaterialTheme.typography.titleLarge)
                 Text(
                     stringResource(
                         when {
                             !isAvailable -> Res.string.home_calls_unavailable
-                            isOn -> Res.string.home_calls_on
+                            status.isProtected -> Res.string.home_calls_on
+                            status.screeningOn -> Res.string.home_calls_no_filters
                             else -> Res.string.home_calls_off
                         },
                     ),
@@ -204,9 +212,9 @@ private fun CallsHeroCard(
                     color = c.textSecondary,
                 )
             }
-            KnoblyFaders(active = isOn)
+            KnoblyFaders(active = status.isProtected)
         }
-        if (isAvailable && !isOn) {
+        if (isAvailable && !status.screeningOn) {
             KnoblyPrimaryButton(
                 text = stringResource(Res.string.home_calls_enable),
                 onClick = onEnable,
@@ -215,6 +223,15 @@ private fun CallsHeroCard(
         }
     }
 }
+
+/** Short status for the calls tile: "2 filtros ativos", "Nenhum filtro ativo" or "Desligado". */
+@Composable
+private fun CallsStatus.shortText(): String =
+    when {
+        isProtected -> pluralStringResource(Res.plurals.home_active_filters, activeFilterCount, activeFilterCount)
+        screeningOn -> stringResource(Res.string.home_status_no_filters)
+        else -> stringResource(Res.string.home_status_off)
+    }
 
 @Composable
 private fun ModuleTile(
@@ -303,7 +320,7 @@ private fun HomeContentPreview() {
             HomeContent(
                 dayPart = DayPart.EVENING,
                 isCallFilteringAvailable = true,
-                isCallFilteringOn = true,
+                callsStatus = CallsStatus(screeningOn = true, activeFilterCount = 2),
                 onEnableCallFiltering = {},
                 onOpenCalls = {},
             )
