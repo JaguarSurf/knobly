@@ -1,0 +1,100 @@
+# ==========================================
+# Gradle / Kotlin
+# ==========================================
+.gradle/
+build/
+.kotlin/
+# Keep the Gradle wrapper jar (it must be committed)
+!gradle/wrapper/gradle-wrapper.jar
+
+# ==========================================
+# Android
+# ==========================================
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+output-metadata.json
+
+# ==========================================
+# Signing secrets (never commit)
+# ==========================================
+keystore.properties
+*.jks
+*.keystore
+
+# ==========================================
+# iOS / Xcode
+# ==========================================
+xcuserdata/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+iosApp/Pods/
+iosApp/build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# ==========================================
+# IDEs & editors
+# ==========================================
+.idea/
+*.iml
+.fleet/
+bin/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+.history/
+
+# ==========================================
+# OS
+# ==========================================
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Python (auxiliary tooling only)
+# ==========================================
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# ==========================================
+# Logs & temporary files
+# ==========================================
+*.log
+# JVM heap dumps (Gradle/Kotlin daemon out-of-memory)
+*.hprof
+logs/
+.logs/
+temp-*
+
+# ==========================================
+# Environment & local state
+# ==========================================
+.env
+.local/
+.bash_history
+
+# ==========================================
+# Containers
+# ==========================================
+.devcontainer/docker-compose.nvidia.yaml
+# Generated on the host by .devcontainer/scripts/init.sh
+.devcontainer/docker-compose.devices.yaml
+.devcontainer/docker-compose.kvm.yaml
+
+# ==========================================
+# AI tools (local state and credentials)
+# ==========================================
+.codex/
+.claude/
+.opencode/

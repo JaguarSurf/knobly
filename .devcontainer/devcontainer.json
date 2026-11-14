@@ -1,0 +1,77 @@
+{
+  "name": "Knobly",
+  "dockerComposeFile": [
+    "docker-compose.yaml",
+    "docker-compose.nvidia.yaml",
+    "docker-compose.devices.yaml"
+  ],
+  "service": "devcontainer",
+  "containerEnv": {
+    "HISTFILE": "/workspace/.local/.bash_history",
+    "HISTIGNORE": "set +o*:set -o*:opencode --port*:[A*",
+    "OPENCODE_CONFIG_DIR": "/workspace/.opencode",
+    "CLAUDE_CONFIG_DIR": "/workspace/.claude",
+    "CODEX_HOME": "/workspace/.codex"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "fwcd.kotlin",
+        "vscjava.vscode-gradle",
+        "redhat.vscode-xml",
+        "bierner.markdown-mermaid",
+        "EditorConfig.EditorConfig",
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "ms-azuretools.vscode-docker",
+        "tamasfe.even-better-toml",
+        "timonwong.shellcheck",
+        "sst-dev.opencode",
+        "anthropic.claude-code",
+        "openai.chatgpt"
+      ],
+      "settings": {
+        "files.eol": "\n",
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false,
+        "shellcheck.customArgs": [
+          "--external-sources"
+        ],
+        "files.associations": {
+          "*.toml": "toml"
+        },
+        "[toml]": {
+          "editor.defaultFormatter": "tamasfe.even-better-toml",
+          "editor.formatOnSave": true,
+          "editor.tabSize": 4
+        },
+        "[shellscript]": {
+          "editor.tabSize": 4
+        },
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.tabSize": 4
+        },
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "[kotlin]": {
+          "editor.tabSize": 4
+        },
+        "files.watcherExclude": {
+          "**/.gradle/**": true,
+          "**/build/**": true,
+          "**/.kotlin/**": true,
+          "**/.local/**": true
+        },
+        "search.exclude": {
+          "**/.local/**": true
+        }
+      }
+    }
+  },
+  "workspaceFolder": "/workspace",
+  "initializeCommand": "bash .devcontainer/scripts/init.sh",
+  "postCreateCommand": "bash .devcontainer/scripts/config.sh",
+  "postStartCommand": "bash .devcontainer/scripts/sync-agent-skills.sh"
+}

@@ -1,0 +1,35 @@
+services:
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+
+    env_file:
+      - path: ../.env
+        required: false
+
+    environment:
+      - DISPLAY=$DISPLAY
+      - XAUTHORITY=$XAUTHORITY
+      - GRADLE_USER_HOME=/home/vscode/.gradle
+      # Kotlin/Native toolchain (iOS klibs) inside the persistent Gradle folder
+      - KONAN_DATA_DIR=/home/vscode/.gradle/konan
+
+    volumes:
+      - ..:/workspace:cached
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ~/.ssh:/home/vscode/.ssh
+      # Persistent tool data in the project folder (git-ignored), outside Docker's storage.
+      # The folders are created on the host by .devcontainer/scripts/init.sh. See docs/development.md.
+      # Gradle caches, wrapper distributions, Kotlin/Native and the JetBrains Runtime (Hot Reload)
+      - ../.local/devcontainer/gradle:/home/vscode/.gradle
+      # Android SDK (installed by .devcontainer/scripts/android_sdk.sh), including the emulator and system images
+      - ../.local/devcontainer/android-sdk:/opt/android-sdk
+      # AVDs and adb keys (paired phones stay authorized)
+      - ../.local/devcontainer/android-home:/home/vscode/.android
+      # Temporary files (Gradle, Kotlin, sdkmanager, tools) on the project disk, not in the container's storage
+      - ../.local/devcontainer/tmp:/tmp
+
+    network_mode: host
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
