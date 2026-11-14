@@ -37,6 +37,7 @@ include(":app:desktop")
 include(":app:shared")
 
 // Features
+include(":feature:home")
 include(":feature:calls")
 include(":feature:history")
 include(":feature:stats")

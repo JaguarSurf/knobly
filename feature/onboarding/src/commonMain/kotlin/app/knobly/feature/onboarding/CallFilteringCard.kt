@@ -17,6 +17,13 @@ import app.knobly.core.designsystem.GlassCard
 import app.knobly.core.designsystem.KnoblyPrimaryButton
 import app.knobly.core.designsystem.KnoblyStatus
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.feature.onboarding.resources.Res
+import app.knobly.feature.onboarding.resources.call_filtering_enable
+import app.knobly.feature.onboarding.resources.call_filtering_ios_body
+import app.knobly.feature.onboarding.resources.call_filtering_off_body
+import app.knobly.feature.onboarding.resources.call_filtering_off_title
+import app.knobly.feature.onboarding.resources.call_filtering_status_off
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -54,24 +61,26 @@ fun CallFilteringCardContent(
         contentPadding = PaddingValues(20.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            KnoblyStatus("Off", active = false)
-            Text("Call filtering is off", style = MaterialTheme.typography.titleLarge, color = c.text)
+            KnoblyStatus(stringResource(Res.string.call_filtering_status_off), active = false)
+            Text(
+                stringResource(Res.string.call_filtering_off_title),
+                style = MaterialTheme.typography.titleLarge,
+                color = c.text,
+            )
             if (isRoleAvailable) {
                 Text(
-                    "To apply your filters, allow Knobly to check incoming calls before they ring. " +
-                        "Your phone app stays the same, and everything stays on this device.",
+                    stringResource(Res.string.call_filtering_off_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = c.textSoft,
                 )
                 KnoblyPrimaryButton(
-                    text = "Enable call filtering",
+                    text = stringResource(Res.string.call_filtering_enable),
                     onClick = onEnable,
                     modifier = Modifier.fillMaxWidth().testTag(CallFilteringTestTags.ENABLE),
                 )
             } else {
                 Text(
-                    "To block calls on iPhone, enable Knobly in " +
-                        "Settings > Apps > Phone > Call Blocking & Identification.",
+                    stringResource(Res.string.call_filtering_ios_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = c.textSoft,
                 )

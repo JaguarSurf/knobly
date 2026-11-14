@@ -1,3 +1,4 @@
+import app.knobly.buildlogic.knoblyNamespace
 import app.knobly.buildlogic.libs
 import app.knobly.buildlogic.library
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
@@ -5,6 +6,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.compose.ComposeExtension
+import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /** Adds Compose Multiplatform (shared UI) to a `knobly.kmp.library` module. */
@@ -18,6 +21,13 @@ class KmpComposeConventionPlugin : Plugin<Project> {
             // by the desktop harness (`./gradlew :app:desktop:hotRun`).
             pluginManager.apply("org.jetbrains.compose.hot-reload")
 
+            // Each module gets its own resource class, e.g. :feature:calls -> app.knobly.feature.calls.resources.Res
+            extensions.configure<ComposeExtension> {
+                (this as ExtensionAware).extensions.configure<ResourcesExtension> {
+                    packageOfResClass = "$knoblyNamespace.resources"
+                }
+            }
+
             extensions.configure<KotlinMultiplatformExtension> {
                 // Compose Multiplatform resources (fonts, strings) are packaged as Android resources/assets; the AGP 9
                 // KMP library plugin leaves them disabled by default, which would ship an APK without them.
@@ -26,6 +36,9 @@ class KmpComposeConventionPlugin : Plugin<Project> {
                 }
 
                 sourceSets.getByName("commonMain").dependencies {
+                    // Strings (values/ = English fallback, values-pt/ = Portuguese) and other resources live in
+                    // src/commonMain/composeResources.
+                    implementation(libs.library("compose-components-resources"))
                     implementation(libs.library("compose-runtime"))
                     implementation(libs.library("compose-foundation"))
                     implementation(libs.library("compose-ui"))

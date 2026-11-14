@@ -11,6 +11,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import java.util.Locale
 
 /**
  * Starts the real shared graph with fake platform adapters; returns the fake role controller.
@@ -21,6 +22,8 @@ import org.koin.dsl.module
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun startTestKoin(roleHeld: Boolean): FakeScreeningRoleController {
     Dispatchers.setMain(UnconfinedTestDispatcher())
+    // UI tests and screenshots run in Brazilian Portuguese, the app's main language.
+    Locale.setDefault(Locale.forLanguageTag("pt-BR"))
     val roleController = FakeScreeningRoleController(roleHeld = roleHeld)
     startKoin {
         modules(knoblyModules(module { single { roleController } bind ScreeningRoleController::class }))

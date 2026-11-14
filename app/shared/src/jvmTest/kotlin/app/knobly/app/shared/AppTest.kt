@@ -3,10 +3,13 @@ package app.knobly.app.shared
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import app.knobly.feature.home.HomeTestTags
 import app.knobly.feature.onboarding.CallFilteringTestTags
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -17,50 +20,61 @@ class AppTest {
     fun tearDown() = stopTestKoin()
 
     @Test
-    fun `starts on the filters tab and navigates between the three tabs`() =
+    fun `starts on the home tab and navigates between the four tabs`() =
         runComposeUiTest {
             startTestKoin(roleHeld = true)
             setContent { App() }
 
+            onNodeWithTag("tab.home").assertIsSelected()
+            onNodeWithText("sob controle.", substring = true).assertIsDisplayed()
+
+            onNodeWithTag("tab.filters").performClick()
             onNodeWithTag("tab.filters").assertIsSelected()
-            onNodeWithText("Your call filter rules will be listed here.").assertIsDisplayed()
+            onNodeWithText("Suas regras de filtro de chamadas aparecerão aqui.").assertIsDisplayed()
 
             onNodeWithTag("tab.history").performClick()
             onNodeWithTag("tab.history").assertIsSelected()
-            onNodeWithText("Calls filtered by Knobly will appear here.").assertIsDisplayed()
+            onNodeWithText("As chamadas filtradas pelo Knobly aparecerão aqui.").assertIsDisplayed()
 
             onNodeWithTag("tab.stats").performClick()
             onNodeWithTag("tab.stats").assertIsSelected()
-            onNodeWithText("Charts of filtered calls", substring = true).assertIsDisplayed()
+            onNodeWithText("Gráficos das chamadas filtradas", substring = true).assertIsDisplayed()
         }
 
     @Test
-    fun `opens directly on the tabs even when call filtering is off`() =
-        runComposeUiTest {
-            startTestKoin(roleHeld = false)
-            setContent { App() }
-
-            onNodeWithTag("tab.filters").assertIsSelected()
-            onNodeWithTag(CallFilteringTestTags.CARD).assertIsDisplayed()
-        }
-
-    @Test
-    fun `enabling call filtering from the filters tab hides the card`() =
-        runComposeUiTest {
-            startTestKoin(roleHeld = false)
-            setContent { App() }
-
-            onNodeWithTag(CallFilteringTestTags.ENABLE).performClick()
-
-            onNodeWithTag(CallFilteringTestTags.CARD).assertDoesNotExist()
-            onNodeWithTag("tab.filters").assertIsSelected()
-        }
-
-    @Test
-    fun `no call filtering card when filtering is already on`() =
+    fun `the calls tile on home opens the filters tab`() =
         runComposeUiTest {
             startTestKoin(roleHeld = true)
             setContent { App() }
+
+            onNodeWithTag(HomeTestTags.CALLS_TILE).performClick()
+
+            onNodeWithTag("tab.filters").assertIsSelected()
+        }
+
+    @Test
+    fun `call filtering can be enabled from home`() =
+        runComposeUiTest {
+            startTestKoin(roleHeld = false)
+            setContent { App() }
+
+            onAllNodesWithText("Desligado").onFirst().assertIsDisplayed()
+            onNodeWithTag(HomeTestTags.ENABLE_CALL_FILTERING).performClick()
+
+            onNodeWithTag(HomeTestTags.ENABLE_CALL_FILTERING).assertDoesNotExist()
+            onAllNodesWithText("Protegido").onFirst().assertIsDisplayed()
+        }
+
+    @Test
+    fun `filters tab shows the call filtering card until filtering is enabled`() =
+        runComposeUiTest {
+            startTestKoin(roleHeld = false)
+            setContent { App() }
+
+            onNodeWithTag("tab.filters").performClick()
+            onNodeWithTag(CallFilteringTestTags.CARD).assertIsDisplayed()
+
+            onNodeWithTag(CallFilteringTestTags.ENABLE).performClick()
 
             onNodeWithTag(CallFilteringTestTags.CARD).assertDoesNotExist()
         }

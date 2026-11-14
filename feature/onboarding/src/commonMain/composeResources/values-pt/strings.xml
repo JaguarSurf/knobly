@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_filtering_status_off">Desligado</string>
+    <string name="call_filtering_off_title">Filtro de chamadas desligado</string>
+    <string name="call_filtering_off_body">Para aplicar seus filtros, permita que o Knobly confira as chamadas antes de tocarem. Seu app de Telefone continua o mesmo, e tudo fica neste aparelho.</string>
+    <string name="call_filtering_enable">Ativar filtro de chamadas</string>
+    <string name="call_filtering_ios_body">Para bloquear chamadas no iPhone, ative o Knobly em Ajustes > Apps > Telefone > Bloqueio e Identificação de Chamadas.</string>
+</resources>

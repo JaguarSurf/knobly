@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stats_title">Statistics</string>
+    <string name="stats_empty_message">Charts of filtered calls per hour, day, week, month and year will appear here.</string>
+</resources>

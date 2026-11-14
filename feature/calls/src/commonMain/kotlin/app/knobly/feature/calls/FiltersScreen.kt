@@ -5,13 +5,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.knobly.core.designsystem.EmptyState
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.feature.calls.resources.Res
+import app.knobly.feature.calls.resources.filters_empty_message
+import app.knobly.feature.calls.resources.filters_title
+import org.jetbrains.compose.resources.stringResource
 
 /** Placeholder: list, create and reorder call filter rules. */
 @Composable
 fun FiltersScreen(modifier: Modifier = Modifier) {
     EmptyState(
-        title = "Filters",
-        message = "Your call filter rules will be listed here.",
+        title = stringResource(Res.string.filters_title),
+        message = stringResource(Res.string.filters_empty_message),
         modifier = modifier,
     )
 }

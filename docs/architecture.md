@@ -21,6 +21,7 @@ flowchart TD
     end
 
     subgraph Features
+        FHome[":feature:home<br/>control center"]
         FC[":feature:calls<br/>call rules"]
         FH[":feature:history"]
         FS[":feature:stats"]
@@ -48,14 +49,14 @@ flowchart TD
     end
 
     AA & IA & AD --> AS
-    AS --> FC & FH & FS & FSet & FO
+    AS --> FHome & FC & FH & FS & FSet & FO
     AA --> PA
     AS -. iOS only .-> PI
     AD --> PF
 
-    FC & FH & FSet & FO --> DR
+    FHome & FC & FH & FSet & FO --> DR
     FS --> DS
-    FC & FH & FS & FSet & FO --> CDes
+    FHome & FC & FH & FS & FSet & FO --> CDes
 
     PA --> DR
     PI --> DR
@@ -76,6 +77,7 @@ flowchart TD
 | `:core:designsystem` | Theme, colors, typography, reusable components |
 | `:domain:rules` | Rule engine: evaluation, ordering, caching, rule repository |
 | `:domain:stats` | Statistics use cases (aggregation by period) |
+| `:feature:home` | Control center (the **Início** tab): status of each module and the way into its controls; future modules (messages, notifications) appear here |
 | `:feature:calls` | Screens to create, edit, reorder and enable call rules |
 | `:feature:history` | List of filtered events |
 | `:feature:stats` | Charts and dashboards |
@@ -92,6 +94,11 @@ flowchart TD
 ## Targets
 
 Shared modules (`:core:*`, `:domain:*`, `:feature:*`, `:platform:fake`) target **Android, iOS and JVM**. The JVM target powers the desktop harness and headless UI tests; see [ADR-0005](adr/0005-desktop-harness-and-platform-ports.md). Any shared library must support all three targets.
+
+## Navigation and languages
+
+- Four bottom tabs, hosted by `:app:shared`: **Início** (`:feature:home`, start destination), **Filtros** (`:feature:calls`, with the call filtering card from `:feature:onboarding`), **Histórico** (`:feature:history`) and **Estatísticas** (`:feature:stats`). The app layer wires cross-feature navigation (e.g. the calls tile on Início opens Filtros) through callbacks; features never navigate to each other directly.
+- UI text lives in each module's Compose resources: `src/commonMain/composeResources/values/strings.xml` (English, fallback) and `values-pt/strings.xml` (Portuguese, the main language). Android declares both in `res/xml/locales_config.xml` (per-app language on Android 13+).
 
 ## Platform ports
 

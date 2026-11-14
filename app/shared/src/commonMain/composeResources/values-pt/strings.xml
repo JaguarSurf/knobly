@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_home">Início</string>
+    <string name="nav_filters">Filtros</string>
+    <string name="nav_history">Histórico</string>
+    <string name="nav_stats">Estatísticas</string>
+</resources>

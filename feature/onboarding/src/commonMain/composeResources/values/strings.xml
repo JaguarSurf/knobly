@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_filtering_status_off">Off</string>
+    <string name="call_filtering_off_title">Call filtering is off</string>
+    <string name="call_filtering_off_body">To apply your filters, allow Knobly to check incoming calls before they ring. Your phone app stays the same, and everything stays on this device.</string>
+    <string name="call_filtering_enable">Enable call filtering</string>
+    <string name="call_filtering_ios_body">To block calls on iPhone, enable Knobly in Settings > Apps > Phone > Call Blocking &amp; Identification.</string>
+</resources>

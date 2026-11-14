@@ -5,13 +5,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import app.knobly.core.designsystem.EmptyState
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.feature.stats.resources.Res
+import app.knobly.feature.stats.resources.stats_empty_message
+import app.knobly.feature.stats.resources.stats_title
+import org.jetbrains.compose.resources.stringResource
 
 /** Placeholder: charts of filtered calls. */
 @Composable
 fun StatsScreen(modifier: Modifier = Modifier) {
     EmptyState(
-        title = "Statistics",
-        message = "Charts of filtered calls per hour, day, week, month and year will appear here.",
+        title = stringResource(Res.string.stats_title),
+        message = stringResource(Res.string.stats_empty_message),
         modifier = modifier,
     )
 }

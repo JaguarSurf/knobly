@@ -17,6 +17,7 @@ kotlin {
         commonMain.dependencies {
             api(projects.domain.rules)
             implementation(projects.core.designsystem)
+            implementation(projects.feature.home)
             implementation(projects.feature.calls)
             implementation(projects.feature.history)
             implementation(projects.feature.stats)

@@ -10,7 +10,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 
 /**
- * Roborazzi screenshots of the main screens, at a phone-like size.
+ * Roborazzi screenshots of the main screens (pt-BR, phone size, light and dark).
  * `./gradlew :app:shared:recordRoborazziJvm` writes them to app/shared/build/outputs/roborazzi/.
  */
 @OptIn(ExperimentalTestApi::class)
@@ -22,18 +22,29 @@ class ScreenshotTest {
         name: String,
         roleHeld: Boolean = true,
         tab: String? = null,
+        dark: Boolean = false,
     ) = runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT) {
         startTestKoin(roleHeld)
-        setContent { App() }
+        setContent { App(darkTheme = dark) }
         tab?.let { onNodeWithTag(it).performClick() }
         onRoot().captureRoboImage("build/outputs/roborazzi/$name.png")
     }
 
     @Test
-    fun filtersWithFilteringOff() = screenshot("filters-filtering-off", roleHeld = false)
+    fun home() = screenshot("home")
 
     @Test
-    fun filters() = screenshot("filters")
+    fun homeDark() = screenshot("home-dark", dark = true)
+
+    @Test
+    fun homeFilteringOff() = screenshot("home-filtering-off", roleHeld = false)
+
+    @Test
+    fun filtersFilteringOffDark() =
+        screenshot("filters-filtering-off-dark", roleHeld = false, tab = "tab.filters", dark = true)
+
+    @Test
+    fun filters() = screenshot("filters", tab = "tab.filters")
 
     @Test
     fun history() = screenshot("history", tab = "tab.history")

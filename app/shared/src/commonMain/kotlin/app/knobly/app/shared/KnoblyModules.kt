@@ -3,6 +3,7 @@ package app.knobly.app.shared
 import app.knobly.core.model.IncomingCall
 import app.knobly.domain.rules.RuleEngine
 import app.knobly.domain.rules.call.SpikeRules
+import app.knobly.feature.home.HomeViewModel
 import app.knobly.feature.onboarding.CallFilteringViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
@@ -15,6 +16,7 @@ val sharedModule: Module =
         // Spike: hard-coded rules until rules are persisted (:core:database) and edited in :feature:calls.
         single { RuleEngine<IncomingCall> { SpikeRules.calls } }
         viewModelOf(::CallFilteringViewModel)
+        viewModelOf(::HomeViewModel)
     }
 
 /**

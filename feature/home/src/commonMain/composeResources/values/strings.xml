@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_headline_start">Your phone,</string>
+    <string name="home_headline_end">under your control.</string>
+    <string name="home_calls">Calls</string>
+    <string name="home_status_protected">Protected</string>
+    <string name="home_status_off">Off</string>
+    <string name="home_calls_on">Checking incoming calls</string>
+    <string name="home_calls_off">Call filtering is off</string>
+    <string name="home_calls_enable">Enable call filtering</string>
+    <string name="home_calls_unavailable">Not available on this device</string>
+    <string name="home_controls">Controls</string>
+    <string name="home_open_calls">Open call filters</string>
+    <string name="home_module_messages">Messages</string>
+    <string name="home_module_notifications">Notifications</string>
+    <string name="home_coming_soon">Coming soon</string>
+    <string name="home_more_controls">New controls will appear here</string>
+</resources>
