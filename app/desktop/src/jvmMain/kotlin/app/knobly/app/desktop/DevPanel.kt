@@ -2,13 +2,14 @@ package app.knobly.app.desktop
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import app.knobly.core.designsystem.KnoblyTheme
 import app.knobly.core.model.Action
@@ -50,29 +52,116 @@ private data class SimulatedCall(
 )
 
 /**
- * Developer tools next to the app: toggles the fake call screening role and simulates incoming calls through
- * the real normalizer and rule engine (the same code the Android CallScreeningService runs).
+ * Developer tools next to the app, in three sections: the simulated phone ([device]: screen, font scale, language),
+ * the fake platform adapters, and an incoming call simulator that goes through the real normalizer and rule engine
+ * (the same code the Android CallScreeningService runs).
  */
 @Composable
-fun DevPanel(modifier: Modifier = Modifier) {
+fun DevPanel(
+    device: DeviceFrameState,
+    modifier: Modifier = Modifier,
+) {
+    KnoblyTheme {
+        Surface(modifier) {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text("Dev tools", style = MaterialTheme.typography.headlineSmall)
+                Section("Device") { DeviceControls(device) }
+                Section("Platform (fakes)") { PlatformControls() }
+                Section("Incoming calls") { CallSimulator() }
+            }
+        }
+    }
+}
+
+/** Simulated phone: screen size and orientation, font scale and language. */
+@Composable
+private fun DeviceControls(device: DeviceFrameState) {
+    Field("Screen", alignment = Alignment.Top) {
+        ScreenPresets(device.preset, onSelect = { device.preset = it }, modifier = Modifier.weight(1f))
+    }
+    Field("Orientation") {
+        Switch(checked = device.landscape, onCheckedChange = { device.landscape = it })
+        Text("Landscape")
+    }
+    Field("Font scale") {
+        Choices(FontScales, device.fontScale, onSelect = { device.fontScale = it }, label = { "$it" })
+    }
+    Field("Language") {
+        Choices(HarnessLanguage.entries, device.language, onSelect = { device.language = it }, label = { it.label })
+    }
+}
+
+/** One click per screen: a tile for each preset (name and size), and the real phone it matches, if any. */
+@Composable
+private fun ScreenPresets(
+    selected: DevicePreset,
+    onSelect: (DevicePreset) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            maxItemsInEachRow = 3,
+        ) {
+            DevicePreset.entries.forEach { preset ->
+                ChoiceTile(
+                    selected = preset == selected,
+                    onClick = { onSelect(preset) },
+                    title = preset.label,
+                    subtitle = preset.size.asText(),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        selected.example?.let {
+            Text(
+                "${selected.label}: $it",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun DpSize.asText() = "${width.value.toInt()} × ${height.value.toInt()} dp"
+
+/** The fake platform adapters: the call screening role and the contacts permission. */
+@Composable
+private fun PlatformControls() {
     val roleController = koinInject<FakeScreeningRoleController>()
     val contacts = koinInject<FakeContactsAccess>()
+    val roleHeld by roleController.isRoleHeld.collectAsState()
+    val contactsGranted by contacts.isGranted.collectAsState()
+
+    SwitchRow(roleHeld, roleController::setRoleHeld, "Call screening role held")
+    SwitchRow(
+        contactsGranted,
+        contacts::setGranted,
+        "Contacts permission granted",
+        "Fake contacts: (11) 91234-5678 and (35) 8123-4567, saved without the 9",
+    )
+}
+
+@Composable
+private fun CallSimulator() {
     val screener = koinInject<CallScreener>()
     val recorder = koinInject<CallHistoryRecorder>()
     val callLog = koinInject<FakeCallLogAccess>()
     val outcomes = koinInject<CallOutcomeResolver>()
-    var answer by remember { mutableStateOf(true) }
     val normalizer = koinInject<PhoneNumberNormalizer>()
     val scope = rememberCoroutineScope()
-    val roleHeld by roleController.isRoleHeld.collectAsState()
-    val contactsGranted by contacts.isGranted.collectAsState()
+    var answer by remember { mutableStateOf(true) }
     var number by remember { mutableStateOf("0303 123 4567") }
     val calls = remember { mutableStateListOf<SimulatedCall>() }
 
     fun simulate(raw: String?) {
         val call = IncomingCall(normalizer.normalize(raw), Clock.System.now())
-        // Same path as the Android CallScreeningService: in-memory rules + contacts + engine.
-        // Like the Android CallScreeningService: decide, then store rejected calls in the history.
+        // Like the Android CallScreeningService: in-memory rules + contacts + engine decide, then the call is
+        // stored in the history.
         scope.launch {
             val decision = screener.screen(call)
             calls.add(0, SimulatedCall(raw ?: "(hidden)", call, decision))
@@ -85,59 +174,24 @@ fun DevPanel(modifier: Modifier = Modifier) {
         }
     }
 
-    KnoblyTheme {
-        Surface(modifier) {
-            Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Dev tools", style = MaterialTheme.typography.headlineSmall)
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Switch(checked = roleHeld, onCheckedChange = roleController::setRoleHeld)
-                    Text("Call screening role held (fake)")
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Switch(checked = answer, onCheckedChange = { answer = it })
-                    Text(if (answer) "Calls that ring are answered" else "Calls that ring are missed")
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Switch(checked = contactsGranted, onCheckedChange = contacts::setGranted)
-                    Text(
-                        "Contacts permission granted " +
-                            "(fake contacts: (11) 91234-5678 and (35) 8123-4567, saved without the 9)",
-                    )
-                }
-
-                HorizontalDivider()
-                Text("Incoming call simulator", style = MaterialTheme.typography.titleMedium)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    OutlinedTextField(
-                        value = number,
-                        onValueChange = { number = it },
-                        label = { Text("Caller number") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Button(onClick = { simulate(number) }) { Text("Call") }
-                    OutlinedButton(onClick = { simulate(null) }) { Text("Hidden") }
-                }
-
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(calls) { SimulatedCallRow(it) }
-                }
-            }
-        }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = number,
+            onValueChange = { number = it },
+            label = { Text("Caller number") },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+        Button(onClick = { simulate(number) }) { Text("Call") }
+        OutlinedButton(onClick = { simulate(null) }) { Text("Hidden") }
     }
+    SwitchRow(
+        answer,
+        { answer = it },
+        "Calls that ring are answered",
+        "Off: they are missed (outcome written to the fake call log)",
+    )
+    calls.forEach { SimulatedCallRow(it) }
 }
 
 @Composable

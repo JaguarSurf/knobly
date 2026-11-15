@@ -26,7 +26,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
-/** A pill-shaped choice (module selector, history filter). */
+/**
+ * A pill-shaped choice (module selector, history filter). Its text never breaks: put chips in a `FlowRow`, so a
+ * chip that does not fit moves to the next line on narrow screens and with large fonts.
+ */
 @Composable
 fun KnoblyChip(
     text: String,
@@ -67,7 +70,7 @@ fun KnoblyChip(
                 .padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = MaterialTheme.typography.labelMedium, color = content)
+        Text(text, style = MaterialTheme.typography.labelMedium, color = content, maxLines = 1, softWrap = false)
     }
 }
 

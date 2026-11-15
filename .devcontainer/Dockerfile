@@ -44,6 +44,10 @@ RUN apt-get update && apt-get upgrade -y \
         libpulse0 libnss3 libxcomposite1 libxcursor1 libxdamage1 libxrandr2 \
         libasound2t64 libxkbfile1 libdbus-1-3 libxkbcommon-x11-0 \
         libgbm1 libdrm2 libxshmfence1 \
+    # X11 session libraries required by the emulator's Qt xcb plugin (libqxcbAndroidEmu.so); without them
+    # the window mode aborts with "no Qt platform plugin could be initialized" (headless mode still works)
+    && apt-get install -y --no-install-recommends \
+        libsm6 libice6 \
     # Environment Configuration
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \

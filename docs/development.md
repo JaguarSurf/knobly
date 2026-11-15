@@ -127,12 +127,11 @@ $ANDROID_HOME/build-tools/37.0.0/apksigner verify --print-certs app/android/buil
 ./gradlew :app:desktop:hotRunJvm    # run with Compose Hot Reload
 ```
 
-The window shows the app at phone width plus **Dev tools**:
+The window shows the app on a simulated phone plus **Dev tools**, in three sections:
 
-- a switch to grant/revoke the (fake) call screening role, which shows/hides the "Call filtering is off" card in the Filters tab;
-- a switch to grant/revoke the (fake) contacts permission; the fake contacts are (11) 91234-5678 and (35) 8123-4567 (saved without the 9th digit, so `35 98123-4567` is a contact too);
-- an **incoming call simulator**: type a number (e.g. `0303 123 4567`) or press *Hidden*. The call goes through the real normalizer, `CallScreener` and history recorder, the same code the Android `CallScreeningService` runs: the panel shows the decision, matched rule and normalized number, and the call appears in the History tab;
-- a switch for what happens to calls that ring: **answered** or **missed** (written to the fake call log, then resolved like on Android).
+- **Device**: the screen size in dp (presets from 320 × 568 to a foldable, including the Galaxy A15 at 384 × 832), landscape, the system **font scale** (0.85 to 2.0, like Android's "Font size") and the **language** (System, Português, English). Use them to check layouts on small screens and with large fonts. A real phone's size in dp is its resolution divided by its density (`adb shell wm size` and `adb shell wm density`). Changing the language restarts the app on its first screen;
+- **Platform (fakes)**: a switch to grant/revoke the (fake) call screening role, which shows/hides the "Call filtering is off" card in the Filters tab, and one for the (fake) contacts permission; the fake contacts are (11) 91234-5678 and (35) 8123-4567 (saved without the 9th digit, so `35 98123-4567` is a contact too);
+- **Incoming calls**: type a number (e.g. `0303 123 4567`) or press *Hidden*. The call goes through the real normalizer, `CallScreener` and history recorder, the same code the Android `CallScreeningService` runs: the panel shows the decision, matched rule and normalized number, and the call appears in the History tab. A switch sets what happens to calls that ring: **answered** or **missed** (written to the fake call log, then resolved like on Android).
 
 Filter settings and the database are kept between runs in `/tmp/knobly-desktop/` (`call_filters.json`, `app_settings.json`, `knobly.db`; in the devcontainer, `/tmp` is `.local/devcontainer/tmp/`); delete the folder to start over.
 

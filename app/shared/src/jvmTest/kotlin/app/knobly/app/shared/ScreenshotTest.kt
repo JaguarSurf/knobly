@@ -1,5 +1,7 @@
 package app.knobly.app.shared
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasAnyAncestor
@@ -11,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
+import androidx.compose.ui.unit.Density
 import app.knobly.domain.history.CallRecord
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
@@ -43,6 +46,8 @@ class ScreenshotTest {
         themeMode: ThemeMode = ThemeMode.SYSTEM,
         callLogGranted: Boolean = true,
         width: Int = PHONE_WIDTH,
+        /** The system font size (Android's "Font size" setting). */
+        fontScale: Float = 1f,
         settings: CallFilterSettings = CallFilterSettings(),
         contactsGranted: Boolean = true,
         history: List<CallRecord> = emptyList(),
@@ -50,7 +55,12 @@ class ScreenshotTest {
         then: ComposeUiTest.() -> Unit = {},
     ) = runDesktopComposeUiTest(width = width, height = PHONE_HEIGHT) {
         startTestKoin(roleHeld, contactsGranted, settings, history, themeMode, callLogGranted)
-        setContent { App(darkTheme = dark) }
+        setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                App(darkTheme = dark)
+            }
+        }
         tab?.let { onNodeWithTag(it).performClick() }
         thenClick?.let { onNodeWithTag(it).performScrollTo().performClick() }
         then()
@@ -208,6 +218,37 @@ class ScreenshotTest {
             dark = true,
             width = 320,
         )
+
+    /** A Galaxy A15 (1080 x 2340 px at 450 dpi = 384 dp): "Rejeitadas" moves to the next line instead of breaking. */
+    @Test
+    fun historyNarrowDark() =
+        screenshot("history-narrow-dark", tab = "tab.history", history = SampleHistory.mixed, dark = true, width = 384)
+
+    /** The smallest phones with a large font: every row of pills wraps instead of breaking their text. */
+    @Test
+    fun historyNarrowLargeFont() =
+        screenshot(
+            "history-narrow-large-font",
+            tab = "tab.history",
+            history = SampleHistory.mixed,
+            width = 320,
+            fontScale = 1.3f,
+        )
+
+    @Test
+    fun statsNarrowLargeFontDark() =
+        screenshot(
+            "stats-narrow-large-font-dark",
+            tab = "tab.stats",
+            history = SampleHistory.longHistory,
+            dark = true,
+            width = 320,
+            fontScale = 1.3f,
+        )
+
+    @Test
+    fun filtersNarrowLargeFont() =
+        screenshot("filters-narrow-large-font", tab = "tab.filters", settings = SAMPLE, width = 320, fontScale = 1.3f)
 
     @Test
     fun homeActivityDark() =
