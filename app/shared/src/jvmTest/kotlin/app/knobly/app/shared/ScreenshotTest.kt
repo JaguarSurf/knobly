@@ -42,12 +42,13 @@ class ScreenshotTest {
         dark: Boolean? = false,
         themeMode: ThemeMode = ThemeMode.SYSTEM,
         callLogGranted: Boolean = true,
+        width: Int = PHONE_WIDTH,
         settings: CallFilterSettings = CallFilterSettings(),
         contactsGranted: Boolean = true,
         history: List<CallRecord> = emptyList(),
         thenClick: String? = null,
         then: ComposeUiTest.() -> Unit = {},
-    ) = runDesktopComposeUiTest(width = PHONE_WIDTH, height = PHONE_HEIGHT) {
+    ) = runDesktopComposeUiTest(width = width, height = PHONE_HEIGHT) {
         startTestKoin(roleHeld, contactsGranted, settings, history, themeMode, callLogGranted)
         setContent { App(darkTheme = dark) }
         tab?.let { onNodeWithTag(it).performClick() }
@@ -196,6 +197,17 @@ class ScreenshotTest {
 
     @Test
     fun homeActivity() = screenshot("home-activity", settings = SAMPLE, history = SampleHistory.calls)
+
+    /** A narrow phone (320 dp): the stat pills must not break their text. */
+    @Test
+    fun homeActivityNarrowDark() =
+        screenshot(
+            "home-activity-narrow-dark",
+            settings = SAMPLE,
+            history = SampleHistory.calls,
+            dark = true,
+            width = 320,
+        )
 
     @Test
     fun homeActivityDark() =

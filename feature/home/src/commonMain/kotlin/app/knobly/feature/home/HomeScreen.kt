@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -212,14 +213,20 @@ private fun CallsHeroCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = c.textSecondary,
                 )
-                if (status.screeningOn) {
-                    Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        StatPill(activity.today, stringResource(Res.string.home_stat_today))
-                        StatPill(activity.lastSevenDays, stringResource(Res.string.home_stat_week))
-                    }
-                }
             }
             KnoblyFaders(active = status.isProtected)
+        }
+        if (status.screeningOn) {
+            // Below the text and the faders, across the whole card: on narrow phones a pill moves to the next line
+            // instead of breaking its text.
+            FlowRow(
+                Modifier.fillMaxWidth().padding(top = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                StatPill(activity.today, stringResource(Res.string.home_stat_today))
+                StatPill(activity.lastSevenDays, stringResource(Res.string.home_stat_week))
+            }
         }
         if (isAvailable && !status.screeningOn) {
             KnoblyPrimaryButton(
@@ -280,6 +287,8 @@ private fun StatPill(
         },
         style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
         color = c.textSoft,
+        maxLines = 1,
+        softWrap = false,
         modifier =
             Modifier
                 .clip(RoundedCornerShape(10.dp))
