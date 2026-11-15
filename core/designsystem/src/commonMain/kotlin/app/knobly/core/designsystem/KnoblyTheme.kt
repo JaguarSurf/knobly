@@ -12,7 +12,7 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Knobly's theme, shared by every platform: dark "Noturno" or light "Pedra", following the system setting.
+ * Knobly's theme, shared by every platform: dark "Noturno" or light "Noturno Partido", following the system setting.
  * See docs/design/visual-identity.md.
  */
 @Composable
@@ -21,7 +21,8 @@ fun KnoblyTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = if (darkTheme) DarkKnoblyColors else LightKnoblyColors
-    CompositionLocalProvider(LocalKnoblyColors provides colors) {
+    val blockColors = if (darkTheme) DarkKnoblyColors else LightBlockKnoblyColors
+    CompositionLocalProvider(LocalKnoblyColors provides colors, LocalKnoblyBlockColors provides blockColors) {
         MaterialTheme(
             colorScheme = colors.toMaterialColorScheme(),
             typography = knoblyTypography(),
@@ -38,6 +39,12 @@ object KnoblyTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalKnoblyColors.current
+
+    /** The colors of the theme's dark blocks ([KnoblyBlock], [KnoblyNavBar]); [colors] itself in the dark theme. */
+    val blockColors: KnoblyColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalKnoblyBlockColors.current
 }
 
 private fun KnoblyColors.toMaterialColorScheme(): ColorScheme {

@@ -12,7 +12,7 @@
 
 ## Themes
 
-The two themes ("Noturno" dark and "Pedra" light) are defined in [visual-identity.md](../design/visual-identity.md).
+The two themes ("Noturno" dark and "Noturno Partido" light) are defined in [visual-identity.md](../design/visual-identity.md).
 
 ## Implementation
 

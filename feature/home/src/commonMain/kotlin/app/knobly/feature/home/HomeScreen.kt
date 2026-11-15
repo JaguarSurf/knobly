@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.knobly.core.designsystem.GlassCard
 import app.knobly.core.designsystem.KnoblyBackground
+import app.knobly.core.designsystem.KnoblyBlock
 import app.knobly.core.designsystem.KnoblyFaders
 import app.knobly.core.designsystem.KnoblyIcons
 import app.knobly.core.designsystem.KnoblyPrimaryButton
@@ -152,6 +154,7 @@ fun HomeContent(
                     title = stringResource(Res.string.home_calls),
                     subtitle = callsStatus.shortText(),
                     icon = KnoblyIcons.Phone,
+                    iconTint = c.moduleCalls,
                     highlighted = callsStatus.isProtected,
                     onClick = onOpenCalls,
                     onClickLabel = stringResource(Res.string.home_open_calls),
@@ -161,6 +164,7 @@ fun HomeContent(
                     title = stringResource(Res.string.home_module_messages),
                     subtitle = stringResource(Res.string.home_coming_soon),
                     icon = KnoblyIcons.Message,
+                    iconTint = c.moduleMessages,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -169,6 +173,7 @@ fun HomeContent(
                     title = stringResource(Res.string.home_module_notifications),
                     subtitle = stringResource(Res.string.home_coming_soon),
                     icon = KnoblyIcons.Bell,
+                    iconTint = c.moduleNotifications,
                     modifier = Modifier.weight(1f),
                 )
                 MoreControlsTile(Modifier.weight(1f))
@@ -186,8 +191,9 @@ private fun CallsHeroCard(
     activity: CallsActivity,
     onEnable: () -> Unit,
 ) {
-    val c = KnoblyTheme.colors
-    GlassCard(Modifier.fillMaxWidth(), cornerRadius = 26.dp, contentPadding = PaddingValues(20.dp)) {
+    // A dark block in the light theme: read the colors inside it.
+    KnoblyBlock(Modifier.fillMaxWidth(), cornerRadius = 26.dp, contentPadding = PaddingValues(20.dp)) {
+        val c = KnoblyTheme.colors
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 KnoblyStatus(
@@ -379,6 +385,7 @@ private fun ModuleTile(
     title: String,
     subtitle: String,
     icon: ImageVector,
+    iconTint: Color,
     modifier: Modifier = Modifier,
     highlighted: Boolean = false,
     onClick: (() -> Unit)? = null,
@@ -402,7 +409,7 @@ private fun ModuleTile(
     ) {
         Column(Modifier.alpha(if (enabled) 1f else 0.7f), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                KnoblyRoundIcon(icon, highlighted = highlighted)
+                KnoblyRoundIcon(icon, highlighted = highlighted, tint = iconTint)
                 if (enabled) {
                     Row(Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
                         Icon(

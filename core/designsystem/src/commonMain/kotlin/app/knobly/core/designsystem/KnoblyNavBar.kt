@@ -17,13 +17,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
-/** Floating glass navigation bar with icon-only tabs (labels are read by screen readers). */
+/**
+ * Floating navigation bar with icon-only tabs (labels are read by screen readers): glass in the dark theme, a block
+ * of softened Noturno ([KnoblyTheme.blockColors]) in the light theme.
+ */
 @Composable
 fun KnoblyNavBar(
     items: List<KnoblyNavItem>,
@@ -31,17 +37,39 @@ fun KnoblyNavBar(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val c = KnoblyTheme.colors
+    val outer = KnoblyTheme.colors
+    val c = KnoblyTheme.blockColors
     val shape = RoundedCornerShape(26.dp)
+    ProvideBlockColors {
+        NavBarRow(items, selectedIndex, onSelect, lightTheme = !outer.isDark, outer.glassShadow, c, shape, modifier)
+    }
+}
+
+@Composable
+private fun NavBarRow(
+    items: List<KnoblyNavItem>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    lightTheme: Boolean,
+    shadowColor: Color,
+    c: KnoblyColors,
+    shape: Shape,
+    modifier: Modifier,
+) {
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .height(68.dp)
-                .shadow(if (c.isDark) 0.dp else 12.dp, shape, ambientColor = c.glassShadow, spotColor = c.glassShadow)
+                .shadow(if (lightTheme) 16.dp else 0.dp, shape, ambientColor = shadowColor, spotColor = shadowColor)
                 .clip(shape)
-                .background(c.glass)
-                .border(1.dp, c.glassBorder, shape)
+                .then(
+                    if (lightTheme) {
+                        Modifier.background(Brush.verticalGradient(listOf(c.backgroundTop, c.backgroundBottom)))
+                    } else {
+                        Modifier.background(c.glass)
+                    },
+                ).border(1.dp, c.glassBorder, shape)
                 .selectableGroup(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -66,8 +94,8 @@ fun KnoblyNavBar(
                 val indicator =
                     when {
                         !selected -> Modifier
-                        c.isDark -> Modifier.knoblyGlow().clip(RoundedCornerShape(18.dp)).background(c.glassStrong)
-                        else -> Modifier.clip(RoundedCornerShape(18.dp)).background(c.accent)
+                        lightTheme -> Modifier.knoblyGlow().clip(RoundedCornerShape(18.dp)).background(c.selected)
+                        else -> Modifier.knoblyGlow().clip(RoundedCornerShape(18.dp)).background(c.glassStrong)
                     }
                 Box(Modifier.size(width = 52.dp, height = 44.dp).then(indicator), contentAlignment = Alignment.Center) {
                     Icon(
@@ -76,8 +104,8 @@ fun KnoblyNavBar(
                         tint =
                             when {
                                 !selected -> c.textSecondary
-                                c.isDark -> c.accent
-                                else -> c.onAccent
+                                lightTheme -> c.onSelected
+                                else -> c.accent
                             },
                         modifier = Modifier.size(22.dp),
                     )

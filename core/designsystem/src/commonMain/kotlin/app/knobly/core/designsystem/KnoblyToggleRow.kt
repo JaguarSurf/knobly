@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -58,12 +59,16 @@ fun KnoblyToggleRow(
     }
 }
 
-/** 40 dp round icon badge; highlighted badges use the accent color (and glow in the dark theme). */
+/**
+ * 40 dp round icon badge; highlighted badges use the accent color (and glow in the dark theme). [tint] colors the
+ * icon when it is not highlighted (default: the secondary text color).
+ */
 @Composable
 fun KnoblyRoundIcon(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     highlighted: Boolean = false,
+    tint: Color = KnoblyTheme.colors.textSecondary,
 ) {
     val c = KnoblyTheme.colors
     Box(
@@ -78,7 +83,7 @@ fun KnoblyRoundIcon(
         Icon(
             icon,
             contentDescription = null,
-            tint = if (highlighted) c.accent else c.textSecondary,
+            tint = if (highlighted) c.accent else tint,
             modifier = Modifier.size(20.dp),
         )
     }

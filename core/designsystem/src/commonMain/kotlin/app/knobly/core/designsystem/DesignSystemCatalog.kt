@@ -47,6 +47,24 @@ fun DesignSystemCatalog(modifier: Modifier = Modifier) {
                 }
             }
 
+            KnoblyBlock(
+                Modifier.fillMaxWidth(),
+                contentPadding =
+                    androidx.compose.foundation.layout
+                        .PaddingValues(16.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        KnoblyStatus("Protegido", active = true)
+                        Text("Chamadas", style = MaterialTheme.typography.titleLarge)
+                    }
+                    KnoblyRoundIcon(KnoblyIcons.Phone, highlighted = true)
+                }
+            }
+
             KnoblyChipRow {
                 listOf("Chamadas", "Mensagens", "Notificações").forEachIndexed { index, label ->
                     KnoblyChip(label, selected = chip == index, onClick = { chip = index }, enabled = index == 0)

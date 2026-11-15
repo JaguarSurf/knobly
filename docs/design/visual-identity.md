@@ -1,9 +1,9 @@
 # Visual identity
 
 - **Status:** agreed
-- **Date:** 2026-11-14
+- **Date:** 2026-11-15 (light theme changed from "Pedra" to "Noturno Partido")
 
-Knobly is a **control center for the phone**: calls first, then messages, notifications and other controls, each one a module with a status and a toggle. The identity is **serene and precise**: dark and calm by default, a warm light theme, soft glass surfaces, and light/glow only where there is an action. No mascots or characters.
+Knobly is a **control center for the phone**: calls first, then messages, notifications and other controls, each one a module with a status and a toggle. The identity is **serene and precise**: dark and calm by default, a soft lavender light theme that carries blocks of the dark one, soft glass surfaces, and light/glow only where there is an action. No mascots or characters.
 
 ## Principles
 
@@ -31,20 +31,32 @@ By default the app follows the system setting (light/dark); the user can also pi
 | Secondary | `#A7A1C2` | Secondary text, inactive icons |
 | Active | `#6EE7B7` | "Active/protected" status dot |
 
-### Light — "Pedra"
+### Light — "Noturno Partido"
+
+The Noturno's personality on a light background: a soft lavender screen, glass cards, a teal-mint accent, colored module icons, and **blocks of a softened Noturno** inside the light theme (the Home status card and the navigation bar). Inside a block, components use the block colors (`KnoblyTheme.blockColors`), so they look as they do in the dark theme.
 
 | Token | Value | Use |
 |---|---|---|
-| Background | `#F4F1EC` → `#E1DAD0` gradient | Screen background, with a soft white light near the top |
-| Glass | white at 55% + 1 px border white at 90% + soft shadow | Cards, navigation bar |
-| Accent | `#5E6E4B` (sage) | Icons, toggles "on", active tab, chart lines |
-| Taupe | `#B9A888` | Primary button background (text `#2E2B26`) |
-| Selected chip | `#2E2B26` | Selected pill/segment (text `#F4F1EC`) |
-| Text | `#2E2B26` | Primary text |
-| Secondary | `#6B645A` | Secondary text, inactive icons |
-| Active | `#5E8C4A` | "Active/protected" status dot |
+| Background | `#F4F3FA` → `#DFDCEE` gradient | Screen background, with a soft white light near the top and a faint mint glow near the bottom end |
+| Glass | white at 55% + 1 px border white at 90% + soft lavender shadow | Cards |
+| Accent | `#13705F` (teal-mint) | Headline, icons, toggles "on", chart lines |
+| Primary button | `#BDEFE1` (mint mist) | Primary button background (text `#221D3E`) |
+| Selected chip | `#221D3E` | Selected pill/segment (text `#F4F3FA`) |
+| Text | `#221D3E` | Primary text |
+| Secondary | `#5D587A` | Secondary text, inactive icons |
+| Active | `#1F8A6E` | "Active/protected" status dot |
+| Module icons | calls `#2E8E79`, messages `#7A64C8`, notifications `#A8741F` | Home module tiles |
 | Alert | `#C8553D` | Errors and alerts only |
 | Call rejected / answered / missed | `#C0392B` / `#3F7F3A` / `#A86A12` (dark theme: `#FF6B6B` / `#6EE7B7` / `#F5B860`) | Call outcome icons and bars (History, Statistics, Home): rejected red, answered green, missed amber |
+
+Dark blocks (`KnoblyBlock`, `KnoblyNavBar`):
+
+| Token | Value | Use |
+|---|---|---|
+| Block | `#36305F` → `#28234A` gradient + 1 px border white at 12% | Home status card, navigation bar |
+| Block accent | `#9AEBD5` | Faders, highlighted icons inside a block |
+| Block text | `#F4F2FF` / `#C2BDDB` secondary | Text inside a block |
+| Selected tab | `#CFF5EB` with a mint glow (icon `#221D3E`) | Active tab of the navigation bar |
 
 Colors must keep text contrast at 4.5:1 or more (3:1 for large text).
 
@@ -55,7 +67,7 @@ Colors must keep text contrast at 4.5:1 or more (3:1 for large text).
 
 Both are open-source (SIL OFL 1.1) and are bundled with the app as Compose resources (`core/designsystem/src/commonMain/composeResources/font/`), never loaded from the network. Licenses: [docs/licenses/fonts/](../licenses/fonts/).
 
-In code: `KnoblyTheme` (colors via `KnoblyTheme.colors`), `KnoblyBackground`, `GlassCard`, `KnoblyToggle`/`KnoblyToggleRow`, `KnoblyChip`/`KnoblyChipRow`, `KnoblySegmentedControl`, `KnoblyModeButton`, `KnoblyPrimaryButton`/`KnoblySecondaryButton`, `KnoblyStatus`, `KnoblyNavBar`, `KnoblyIcons`, `KnoblyMark` — all in `:core:designsystem`, shown together in `DesignSystemCatalog`.
+In code: `KnoblyTheme` (colors via `KnoblyTheme.colors`, dark blocks via `KnoblyTheme.blockColors`), `KnoblyBackground`, `GlassCard`, `KnoblyBlock`, `KnoblyToggle`/`KnoblyToggleRow`, `KnoblyChip`/`KnoblyChipRow`, `KnoblySegmentedControl`, `KnoblyModeButton`, `KnoblyPrimaryButton`/`KnoblySecondaryButton`, `KnoblyStatus`, `KnoblyNavBar`, `KnoblyIcons`, `KnoblyMark` — all in `:core:designsystem`, shown together in `DesignSystemCatalog`.
 
 ## App icon — "Fader k"
 
@@ -77,12 +89,12 @@ All variants use the exact geometry of the SVG source (an accent disc of radius 
 
 ## Components
 
-- **Cards:** glass surface, radius 22–26 dp.
-- **Toggle:** 52×30 dp track; "on" uses the action color (dark) or sage (light) with a white thumb.
+- **Cards:** glass surface, radius 22–26 dp. `KnoblyBlock` is the highlighted card: glass in the dark theme, a dark block in the light theme.
+- **Toggle:** 52×30 dp track; "on" uses the action color (dark) or the teal-mint accent (light) with a white thumb.
 - **Mode buttons:** 60 dp round buttons with an icon and a label below; the selected one gets an accent outline and glow (dark) — used for choices such as the rule type.
 - **Pills:** 40 dp high segmented choices (module, period, history filter). A row of pills (`KnoblyChipRow`) stays on one line on narrow phones: the pills keep 14 dp of side padding when they fit, shrink it down to 6 dp and share the whole width when they do not, and only then move a whole pill to the next line. A pill never breaks its text.
 - **Primary button:** full-width pill, 52–56 dp high.
-- **Navigation:** floating glass bar with 4 tabs — **Início** (control center), **Filtros**, **Histórico**, **Estatísticas**.
+- **Navigation:** floating bar (glass in the dark theme, a dark block in the light theme) with 4 tabs — **Início** (control center), **Filtros**, **Histórico**, **Estatísticas**.
 
 ## Motion
 

@@ -10,7 +10,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-/** Screen background: the theme's vertical gradient plus a soft glow near the top. */
+/**
+ * Screen background: the theme's vertical gradient plus a soft glow near the top (and a second one near the bottom
+ * end in the light theme).
+ */
 @Composable
 fun KnoblyBackground(
     modifier: Modifier = Modifier,
@@ -30,6 +33,20 @@ fun KnoblyBackground(
                         radius = radius,
                         center = center,
                     )
+                    if (c.backgroundGlowSecondary != Color.Transparent) {
+                        val secondCenter = Offset(size.width, size.height * 0.8f)
+                        val secondRadius = size.minDimension * 0.9f
+                        drawCircle(
+                            brush =
+                                Brush.radialGradient(
+                                    listOf(c.backgroundGlowSecondary, Color.Transparent),
+                                    secondCenter,
+                                    secondRadius,
+                                ),
+                            radius = secondRadius,
+                            center = secondCenter,
+                        )
+                    }
                 },
         content = content,
     )
