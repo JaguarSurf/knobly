@@ -1,10 +1,5 @@
 package app.knobly.app.desktop
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
@@ -14,7 +9,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
@@ -74,24 +68,22 @@ class DeviceFrameState(
 }
 
 /**
- * Lays [content] out at exactly the simulated phone size (scrolling when the window is smaller), with the simulated
- * font scale and language. The density is kept: changing it would only zoom the picture, not change the layout.
+ * The simulated phone's screen: [content] with the simulated font scale and language. The density is kept: changing
+ * it would only zoom the picture, not change the layout. The screen size is the size of the Compose scene hosting it
+ * (see [showHarnessWindow]).
  *
  * Compose resources read the JVM default locale, which is not observable state: a language change sets it and then
  * recreates [content] (it starts again on its first screen).
  */
 @Composable
-fun DeviceFrame(
+fun DeviceScreen(
     state: DeviceFrameState,
-    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
     val locale = state.locale
     remember(locale) { Locale.setDefault(locale) }
-    Box(modifier.verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())) {
-        CompositionLocalProvider(LocalDensity provides Density(density.density, state.fontScale)) {
-            Box(Modifier.requiredSize(state.size)) { key(locale) { content() } }
-        }
+    CompositionLocalProvider(LocalDensity provides Density(density.density, state.fontScale)) {
+        key(locale) { content() }
     }
 }

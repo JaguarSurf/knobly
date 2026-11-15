@@ -47,7 +47,7 @@ fun DesignSystemCatalog(modifier: Modifier = Modifier) {
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            KnoblyChipRow {
                 listOf("Chamadas", "Mensagens", "Notificações").forEachIndexed { index, label ->
                     KnoblyChip(label, selected = chip == index, onClick = { chip = index }, enabled = index == 0)
                 }

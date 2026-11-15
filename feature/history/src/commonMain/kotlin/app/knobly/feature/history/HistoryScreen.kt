@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.knobly.core.designsystem.GlassCard
 import app.knobly.core.designsystem.KnoblyChip
+import app.knobly.core.designsystem.KnoblyChipRow
 import app.knobly.core.designsystem.KnoblyIcons
 import app.knobly.core.designsystem.KnoblyPrimaryButton
 import app.knobly.core.designsystem.KnoblySecondaryButton
@@ -200,7 +200,7 @@ private fun Filters(
     selected: HistoryFilter,
     onFilterChange: (HistoryFilter) -> Unit,
 ) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    KnoblyChipRow {
         HistoryFilter.entries.forEach { filter ->
             KnoblyChip(
                 text =

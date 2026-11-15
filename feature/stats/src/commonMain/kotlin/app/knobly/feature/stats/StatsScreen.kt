@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.knobly.core.designsystem.GlassCard
 import app.knobly.core.designsystem.KnoblyChip
+import app.knobly.core.designsystem.KnoblyChipRow
 import app.knobly.core.designsystem.KnoblyLineChart
 import app.knobly.core.designsystem.KnoblyPrimaryButton
 import app.knobly.core.designsystem.KnoblySecondaryButton
@@ -96,7 +96,7 @@ fun StatsContent(
             onSelect = { onPeriodChange(StatsPeriod.entries[it]) },
             modifier = Modifier.fillMaxWidth(),
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        KnoblyChipRow {
             CallCategory.entries.forEach { category ->
                 KnoblyChip(
                     stringResource(category.title),

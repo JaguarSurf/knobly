@@ -219,10 +219,15 @@ class ScreenshotTest {
             width = 320,
         )
 
-    /** A Galaxy A15 (1080 x 2340 px at 450 dpi = 384 dp): "Rejeitadas" moves to the next line instead of breaking. */
+    /** A Galaxy A15 (1080 x 2340 px at 450 dpi = 384 dp): the four filters fit on one line. */
     @Test
     fun historyNarrowDark() =
         screenshot("history-narrow-dark", tab = "tab.history", history = SampleHistory.mixed, dark = true, width = 384)
+
+    /** A 720 x 1600 px phone at density 2.0 (360 dp): the four filters share the width on one line. */
+    @Test
+    fun historyCompact() =
+        screenshot("history-compact", tab = "tab.history", history = SampleHistory.mixed, width = 360)
 
     /** The smallest phones with a large font: every row of pills wraps instead of breaking their text. */
     @Test

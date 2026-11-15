@@ -55,7 +55,7 @@ Colors must keep text contrast at 4.5:1 or more (3:1 for large text).
 
 Both are open-source (SIL OFL 1.1) and are bundled with the app as Compose resources (`core/designsystem/src/commonMain/composeResources/font/`), never loaded from the network. Licenses: [docs/licenses/fonts/](../licenses/fonts/).
 
-In code: `KnoblyTheme` (colors via `KnoblyTheme.colors`), `KnoblyBackground`, `GlassCard`, `KnoblyToggle`/`KnoblyToggleRow`, `KnoblyChip`, `KnoblySegmentedControl`, `KnoblyModeButton`, `KnoblyPrimaryButton`/`KnoblySecondaryButton`, `KnoblyStatus`, `KnoblyNavBar`, `KnoblyIcons`, `KnoblyMark` — all in `:core:designsystem`, shown together in `DesignSystemCatalog`.
+In code: `KnoblyTheme` (colors via `KnoblyTheme.colors`), `KnoblyBackground`, `GlassCard`, `KnoblyToggle`/`KnoblyToggleRow`, `KnoblyChip`/`KnoblyChipRow`, `KnoblySegmentedControl`, `KnoblyModeButton`, `KnoblyPrimaryButton`/`KnoblySecondaryButton`, `KnoblyStatus`, `KnoblyNavBar`, `KnoblyIcons`, `KnoblyMark` — all in `:core:designsystem`, shown together in `DesignSystemCatalog`.
 
 ## App icon — "Fader k"
 
@@ -80,7 +80,7 @@ All variants use the exact geometry of the SVG source (an accent disc of radius 
 - **Cards:** glass surface, radius 22–26 dp.
 - **Toggle:** 52×30 dp track; "on" uses the action color (dark) or sage (light) with a white thumb.
 - **Mode buttons:** 60 dp round buttons with an icon and a label below; the selected one gets an accent outline and glow (dark) — used for choices such as the rule type.
-- **Pills:** 40 dp high segmented choices (module, period, history filter).
+- **Pills:** 40 dp high segmented choices (module, period, history filter). A row of pills (`KnoblyChipRow`) stays on one line on narrow phones: the pills keep 14 dp of side padding when they fit, shrink it down to 6 dp and share the whole width when they do not, and only then move a whole pill to the next line. A pill never breaks its text.
 - **Primary button:** full-width pill, 52–56 dp high.
 - **Navigation:** floating glass bar with 4 tabs — **Início** (control center), **Filtros**, **Histórico**, **Estatísticas**.
 

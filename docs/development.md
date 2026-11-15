@@ -127,7 +127,9 @@ $ANDROID_HOME/build-tools/37.0.0/apksigner verify --print-certs app/android/buil
 ./gradlew :app:desktop:hotRunJvm    # run with Compose Hot Reload
 ```
 
-The window shows the app on a simulated phone plus **Dev tools**, in three sections:
+The window shows the app on a simulated phone plus **Dev tools**. The app runs in its own Compose scene the size of the phone's screen, so its dialogs and bottom sheets stay inside the phone like on a real device.
+
+Dev tools has three sections:
 
 - **Device**: the screen size in dp (presets from 320 × 568 to a foldable, including the Galaxy A15 at 384 × 832), landscape, the system **font scale** (0.85 to 2.0, like Android's "Font size") and the **language** (System, Português, English). Use them to check layouts on small screens and with large fonts. A real phone's size in dp is its resolution divided by its density (`adb shell wm size` and `adb shell wm density`). Changing the language restarts the app on its first screen;
 - **Platform (fakes)**: a switch to grant/revoke the (fake) call screening role, which shows/hides the "Call filtering is off" card in the Filters tab, and one for the (fake) contacts permission; the fake contacts are (11) 91234-5678 and (35) 8123-4567 (saved without the 9th digit, so `35 98123-4567` is a contact too);
