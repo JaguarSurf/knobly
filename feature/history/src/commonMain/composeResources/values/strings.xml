@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="history_title">History</string>
-    <string name="history_subtitle">Incoming calls. Calls rejected by Knobly did not ring or notify you.</string>
+    <string name="history_subtitle">Incoming calls, also those in the phone's call log. Calls rejected by Knobly did not ring or notify you.</string>
     <string name="history_filter_all">All</string>
     <string name="history_today">Today</string>
     <string name="history_yesterday">Yesterday</string>
@@ -24,19 +24,21 @@
     <string name="history_hidden_number">Hidden number</string>
     <string name="history_reason_contacts">Not in your contacts</string>
     <string name="history_reason_unknown">Deleted rule</string>
+    <string name="history_reason_system">Blocked by the system</string>
+    <string name="history_details_from_call_log">From the phone's call log</string>
     <string name="history_rule_prefix">Starts with %1$s</string>
     <string name="history_rule_exact">Exact number</string>
     <string name="history_rule_hidden">Hidden number</string>
     <string name="history_rule_regex">Regular expression %1$s</string>
     <string name="history_footer">History stays on this device only and is kept for 3 years.</string>
     <string name="history_empty_title">No calls yet</string>
-    <string name="history_empty_message">Incoming calls show up here: answered, missed and rejected by Knobly.</string>
+    <string name="history_empty_message">Incoming calls show up here: answered, missed and rejected.</string>
     <string name="history_empty_filter">No calls for this filter.</string>
     <string name="history_clear">Clear history</string>
     <string name="history_clear_title">Clear the history?</string>
     <plurals name="history_clear_message">
-        <item quantity="one">The call will be deleted from Knobly's history (Android's call log is not changed).</item>
-        <item quantity="other">All %1$d calls will be deleted from Knobly's history (Android's call log is not changed).</item>
+        <item quantity="one">The call will be deleted from Knobly's history (Android's call log is not changed, and it won't come back).</item>
+        <item quantity="other">All %1$d calls will be deleted from Knobly's history (Android's call log is not changed, and they won't come back).</item>
     </plurals>
     <string name="history_clear_confirm">Clear</string>
     <string name="history_cancel">Cancel</string>
@@ -52,9 +54,9 @@
     <string name="history_status_missed">Missed</string>
     <string name="history_status_rang">Received</string>
     <string name="history_status_rejected">Rejected · %1$s</string>
-    <string name="history_call_log_title">Answered or missed?</string>
-    <string name="history_call_log_message">Let Knobly read the call log to tell the calls that rang apart. It only reads it, and nothing leaves the phone.</string>
+    <string name="history_call_log_title">Bring in the call log?</string>
+    <string name="history_call_log_message">Let Knobly read the call log to bring in the incoming calls it did not screen (like those from before you installed it) and tell answered calls from missed ones. It only reads it, and nothing leaves the phone.</string>
     <string name="history_call_log_allow">Allow</string>
-    <string name="history_call_log_denied">Without the call log, calls that rang show as received.</string>
+    <string name="history_call_log_denied">Without the call log, History shows only the calls Knobly screened, and calls that rang show as received.</string>
     <string name="history_open_settings">Open settings</string>
 </resources>

@@ -1,8 +1,8 @@
 package app.knobly.feature.stats
 
 import app.knobly.core.model.PhoneNumber
+import app.knobly.domain.history.CallLogSync
 import app.knobly.domain.history.CallOutcome
-import app.knobly.domain.history.CallOutcomeResolver
 import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.InMemoryCallHistoryRepository
 import app.knobly.domain.history.RejectionReason
@@ -55,7 +55,7 @@ class StatsViewModelTest {
     private fun TestScope.viewModel() =
         StatsViewModel(
             CallStatistics(history, clock) { zone },
-            CallOutcomeResolver(history, callLog, { null }, clock, UnconfinedTestDispatcher(testScheduler)),
+            CallLogSync(history, callLog, { null }, clock, UnconfinedTestDispatcher(testScheduler)),
         )
 
     private val callLog = FakeCallLogAccess(granted = false)
@@ -87,21 +87,23 @@ class StatsViewModelTest {
         }
 
     @Test
-    fun `opens on the last 7 days and switches periods`() =
+    fun `opens on the last 8 weeks and switches periods`() =
         runTest {
             reject("2026-11-14T15:00:00Z")
             reject("2026-10-20T15:00:00Z")
+            // Before the first of the 8 weeks (which starts on Monday 21 Sep).
+            reject("2026-09-20T15:00:00Z")
             val viewModel = viewModel()
 
-            assertEquals(StatsPeriod.DAY, viewModel.state.value.period)
+            assertEquals(StatsPeriod.WEEK, viewModel.state.value.period)
             assertEquals(
-                1,
+                2,
                 viewModel.state.value.stats
                     ?.totals
                     ?.total,
             )
             assertEquals(
-                7,
+                8,
                 viewModel.state.value.stats
                     ?.buckets
                     ?.size,
@@ -113,8 +115,9 @@ class StatsViewModelTest {
                 viewModel.state.value.stats
                     ?.period,
             )
+            // The last 12 months include 20 Sep.
             assertEquals(
-                2,
+                3,
                 viewModel.state.value.stats
                     ?.totals
                     ?.total,

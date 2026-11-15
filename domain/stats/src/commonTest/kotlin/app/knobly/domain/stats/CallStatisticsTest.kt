@@ -85,17 +85,20 @@ class CallStatisticsTest {
                     // 13 Nov at 23:30 local is already 14 Nov in UTC: it must count on the 13th.
                     call(3, at(2026, 11, 13, 23, 30), RejectionReason.CUSTOM_RULE, tm.copy(label = "Old label")),
                     call(4, at(2026, 11, 8, 0, 1), RejectionReason.UNKNOWN),
+                    // From the call log: blocked by the system or another app.
+                    call(6, at(2026, 11, 10), RejectionReason.BLOCKED_BY_SYSTEM),
                     // Outside the window.
                     call(5, at(2026, 11, 7, 23, 59)),
                 ).stats(StatsPeriod.DAY).first()
 
-            assertEquals(4, stats.totals.total)
-            assertEquals(listOf(1, 0, 0, 0, 0, 1, 2), stats.buckets.map { it.counts.total })
+            assertEquals(5, stats.totals.total)
+            assertEquals(listOf(1, 0, 1, 0, 0, 1, 2), stats.buckets.map { it.counts.total })
             assertEquals(
                 listOf(
                     // The newest call of the rule gives its label.
                     FilterCount(StatsFilter.Rule(tm), 2),
                     FilterCount(StatsFilter.ContactsOnly, 1),
+                    FilterCount(StatsFilter.BlockedBySystem, 1),
                     FilterCount(StatsFilter.DeletedRule, 1),
                 ),
                 stats.byFilter,

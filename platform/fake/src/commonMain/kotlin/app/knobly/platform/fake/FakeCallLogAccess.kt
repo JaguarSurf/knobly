@@ -9,7 +9,8 @@ import kotlin.time.Instant
 
 /**
  * Fake call log for the desktop harness and tests: [log] what happened to a call (the harness does it after a call
- * rings). [grantOnRequest] decides what happens when the app asks for the permission.
+ * rings, or for a call Knobly did not screen). [grantOnRequest] decides what happens when the app asks for the
+ * permission.
  */
 class FakeCallLogAccess(
     granted: Boolean = true,
@@ -31,7 +32,7 @@ class FakeCallLogAccess(
     }
 
     override fun incomingCalls(since: Instant): List<CallLogEntry> =
-        if (grantedState.value) entries.filter { it.timestamp >= since } else emptyList()
+        if (grantedState.value) entries.filter { it.timestamp >= since }.sortedBy { it.timestamp } else emptyList()
 
     fun log(entry: CallLogEntry) {
         entries += entry

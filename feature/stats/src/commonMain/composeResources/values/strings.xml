@@ -36,6 +36,7 @@
     <string name="stats_by_filter_empty">No rejected calls in this period.</string>
     <string name="stats_filter_contacts">Not in contacts</string>
     <string name="stats_filter_deleted">Deleted rules</string>
+    <string name="stats_filter_system">Blocked by the system</string>
     <string name="stats_rule_prefix">Starts with %1$s</string>
     <string name="stats_rule_hidden">Hidden number</string>
     <string name="stats_rule_regex">Regex %1$s</string>
@@ -68,7 +69,7 @@
     <string name="stats_by_type">By type</string>
     <string name="stats_type_rang">Received (no detail)</string>
     <string name="stats_call_log_title">Answered or missed?</string>
-    <string name="stats_call_log_message">Let Knobly read the call log to tell the calls that rang apart. It only reads it, and nothing leaves the phone.</string>
+    <string name="stats_call_log_message">Let Knobly read the call log to tell the calls that rang apart and include the ones it did not screen. It only reads it, and nothing leaves the phone.</string>
     <string name="stats_call_log_allow">Allow</string>
     <string name="stats_call_log_denied">Without the call log, calls that rang show as received.</string>
     <string name="stats_open_settings">Open settings</string>

@@ -36,6 +36,7 @@
     <string name="stats_by_filter_empty">Nenhuma chamada rejeitada neste período.</string>
     <string name="stats_filter_contacts">Fora dos contatos</string>
     <string name="stats_filter_deleted">Regras excluídas</string>
+    <string name="stats_filter_system">Bloqueadas pelo sistema</string>
     <string name="stats_rule_prefix">Começa com %1$s</string>
     <string name="stats_rule_hidden">Número oculto</string>
     <string name="stats_rule_regex">Regex %1$s</string>
@@ -68,7 +69,7 @@
     <string name="stats_by_type">Por tipo</string>
     <string name="stats_type_rang">Recebidas (sem detalhe)</string>
     <string name="stats_call_log_title">Atendidas ou perdidas?</string>
-    <string name="stats_call_log_message">Permita que o Knobly leia o registro de chamadas para separar as chamadas que tocaram. Ele só lê, e nada sai do aparelho.</string>
+    <string name="stats_call_log_message">Permita que o Knobly leia o registro de chamadas para separar as chamadas que tocaram e incluir as que ele não filtrou. Ele só lê, e nada sai do aparelho.</string>
     <string name="stats_call_log_allow">Permitir</string>
     <string name="stats_call_log_denied">Sem acesso ao registro de chamadas, as que tocaram aparecem como recebidas.</string>
     <string name="stats_open_settings">Abrir configurações</string>

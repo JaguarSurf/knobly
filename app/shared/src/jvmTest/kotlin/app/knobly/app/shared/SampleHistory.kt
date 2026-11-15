@@ -3,6 +3,7 @@ package app.knobly.app.shared
 import app.knobly.core.phone.LibPhoneNumberNormalizer
 import app.knobly.domain.history.CallOutcome
 import app.knobly.domain.history.CallRecord
+import app.knobly.domain.history.CallSource
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.history.RuleSnapshot
 import app.knobly.domain.rules.call.CustomRuleType
@@ -59,6 +60,28 @@ internal object SampleHistory {
                 allowed(22, 3.hours + 5.minutes, "31991112222", CallOutcome.RANG),
                 allowed(23, 1.days - 2.hours, "11912345678", CallOutcome.ANSWERED),
             )
+
+    /** Calls Knobly did not screen, brought in from the system call log: one blocked by the system, one answered. */
+    val fromCallLog: List<CallRecord> =
+        listOf(
+            CallRecord(
+                id = 30,
+                timestamp = TEST_NOW - 6.days,
+                number = normalizer.normalize("08001234567"),
+                outcome = CallOutcome.REJECTED,
+                reason = RejectionReason.BLOCKED_BY_SYSTEM,
+                source = CallSource.CALL_LOG,
+                callLogKey = "a",
+            ),
+            CallRecord(
+                id = 31,
+                timestamp = TEST_NOW - 6.days - 2.hours,
+                number = normalizer.normalize("11912345678"),
+                outcome = CallOutcome.ANSWERED,
+                source = CallSource.CALL_LOG,
+                callLogKey = "b",
+            ),
+        )
 
     /**
      * About a year and a half of incoming calls (deterministic, ~1-4 a day): rejected, answered and missed, for the

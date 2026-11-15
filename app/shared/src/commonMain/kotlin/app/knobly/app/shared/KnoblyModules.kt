@@ -4,7 +4,7 @@ import app.knobly.core.database.KnoblyDatabase
 import app.knobly.core.datastore.DocumentStoreFactory
 import app.knobly.domain.history.CallHistoryRecorder
 import app.knobly.domain.history.CallHistoryRepository
-import app.knobly.domain.history.CallOutcomeResolver
+import app.knobly.domain.history.CallLogSync
 import app.knobly.domain.history.RoomCallHistoryRepository
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CallFilterSettingsRepository
@@ -65,7 +65,7 @@ val sharedModule: Module =
         single<CallHistoryRepository> { RoomCallHistoryRepository(get<KnoblyDatabase>().callEvents()) }
         single { CallHistoryRecorder(get(), get<CallFilterSettingsRepository>().settings, get()) }
         single {
-            CallOutcomeResolver(
+            CallLogSync(
                 history = get(),
                 callLog = get(),
                 normalizer = get(),

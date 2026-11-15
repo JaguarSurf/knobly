@@ -35,8 +35,9 @@ import app.knobly.core.model.Decision
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.history.CallHistoryRecorder
-import app.knobly.domain.history.CallOutcomeResolver
+import app.knobly.domain.history.CallLogSync
 import app.knobly.domain.port.CallLogEntry
+import app.knobly.domain.port.CallLogType
 import app.knobly.domain.rules.call.CallScreener
 import app.knobly.platform.fake.FakeCallLogAccess
 import app.knobly.platform.fake.FakeContactsAccess
@@ -44,6 +45,7 @@ import app.knobly.platform.fake.FakeScreeningRoleController
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 private data class SimulatedCall(
     val input: String,
@@ -151,7 +153,7 @@ private fun CallSimulator() {
     val screener = koinInject<CallScreener>()
     val recorder = koinInject<CallHistoryRecorder>()
     val callLog = koinInject<FakeCallLogAccess>()
-    val outcomes = koinInject<CallOutcomeResolver>()
+    val callLogSync = koinInject<CallLogSync>()
     val normalizer = koinInject<PhoneNumberNormalizer>()
     val scope = rememberCoroutineScope()
     var answer by remember { mutableStateOf(true) }
@@ -168,9 +170,17 @@ private fun CallSimulator() {
             recorder.record(call, decision)
             // The fake "system call log": calls that rang were answered or missed, as chosen in the panel.
             if (decision.action != Action.REJECT) {
-                callLog.log(CallLogEntry(raw, call.timestamp, answered = answer))
-                outcomes.resolvePending()
+                callLog.log(CallLogEntry(raw, call.timestamp, if (answer) CallLogType.ANSWERED else CallLogType.MISSED))
+                callLogSync.sync()
             }
+        }
+    }
+
+    // A call Knobly never screened (before it was installed, or without the role), only in the system call log.
+    fun logOnly(type: CallLogType) {
+        scope.launch {
+            callLog.log(CallLogEntry(number, Clock.System.now() - 2.days, type))
+            callLogSync.sync()
         }
     }
 
@@ -191,6 +201,15 @@ private fun CallSimulator() {
         "Calls that ring are answered",
         "Off: they are missed (outcome written to the fake call log)",
     )
+    Text(
+        "Only in the system call log, 2 days ago (Knobly did not screen it; brought in by the sync):",
+        style = MaterialTheme.typography.bodySmall,
+    )
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(onClick = { logOnly(CallLogType.ANSWERED) }) { Text("Answered") }
+        OutlinedButton(onClick = { logOnly(CallLogType.MISSED) }) { Text("Missed") }
+        OutlinedButton(onClick = { logOnly(CallLogType.BLOCKED) }) { Text("Blocked by system") }
+    }
     calls.forEach { SimulatedCallRow(it) }
 }
 

@@ -145,6 +145,18 @@ class ScreenshotTest {
         screenshot("history-ask-call-log", tab = "tab.history", history = SampleHistory.mixed, callLogGranted = false)
 
     @Test
+    fun historyEmptyAskCallLog() = screenshot("history-empty-ask-call-log", tab = "tab.history", callLogGranted = false)
+
+    @Test
+    fun historyDetailsFromCallLog() =
+        screenshot(
+            "history-details-from-call-log",
+            tab = "tab.history",
+            history = SampleHistory.fromCallLog,
+            thenClick = HistoryTestTags.entry(30),
+        )
+
+    @Test
     fun historyDark() = screenshot("history-dark", tab = "tab.history", history = SampleHistory.mixed, dark = true)
 
     @Test
@@ -182,9 +194,9 @@ class ScreenshotTest {
         }
 
     @Test
-    fun statsWeek() =
-        screenshot("stats-week", tab = "tab.stats", history = SampleHistory.longHistory) {
-            onNodeWithText("Semana").performClick()
+    fun statsDay() =
+        screenshot("stats-day", tab = "tab.stats", history = SampleHistory.longHistory) {
+            onNodeWithText("Dia").performClick()
         }
 
     @Test

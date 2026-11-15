@@ -2,13 +2,14 @@ package app.knobly.feature.history
 
 import app.knobly.core.model.PhoneNumber
 import app.knobly.core.phone.PhoneNumberNormalizer
+import app.knobly.domain.history.CallLogSync
 import app.knobly.domain.history.CallOutcome
-import app.knobly.domain.history.CallOutcomeResolver
 import app.knobly.domain.history.CallRecord
 import app.knobly.domain.history.InMemoryCallHistoryRepository
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.history.RuleSnapshot
 import app.knobly.domain.port.CallLogEntry
+import app.knobly.domain.port.CallLogType
 import app.knobly.domain.port.ContactNumber
 import app.knobly.domain.rules.call.ContactDirectory
 import app.knobly.domain.rules.call.CustomRuleType
@@ -93,7 +94,7 @@ class HistoryViewModelTest {
         return HistoryViewModel(
             history = history,
             contacts = ContactDirectory(contacts, normalizer, backgroundScope, dispatcher),
-            outcomes = CallOutcomeResolver(history, callLog, normalizer, clock, dispatcher),
+            callLog = CallLogSync(history, callLog, normalizer, clock, dispatcher),
             normalizer = normalizer,
             clock = clock,
             timeZone = timeZone,
@@ -167,7 +168,7 @@ class HistoryViewModelTest {
         }
 
     @Test
-    fun `calls that only rang offer the call log permission`() =
+    fun `without the call log History offers it`() =
         runTest {
             history.add(allowed(0, "2026-11-14T15:00:00Z", CallOutcome.RANG))
             val viewModel = viewModel()
@@ -177,10 +178,59 @@ class HistoryViewModelTest {
             assertEquals(CallLogPrompt.DENIED, viewModel.state.value.callLogPrompt)
 
             callLog.grantOnRequest = true
-            callLog.log(CallLogEntry("11912345678", Instant.parse("2026-11-14T15:00:05Z"), answered = true))
+            callLog.log(
+                CallLogEntry("11912345678", Instant.parse("2026-11-14T15:00:05Z"), CallLogType.ANSWERED),
+            )
             viewModel.allowCallLog()
             assertEquals(CallLogPrompt.NONE, viewModel.state.value.callLogPrompt)
             assertEquals(CallOutcome.ANSWERED, history.value.first().outcome)
+        }
+
+    @Test
+    fun `an empty history also offers the call log`() =
+        runTest {
+            history.clear()
+            assertEquals(CallLogPrompt.ASK, viewModel().state.value.callLogPrompt)
+        }
+
+    @Test
+    fun `allowing the call log brings in the calls Knobly did not screen`() =
+        runTest {
+            // Before Knobly was installed: answered, and one blocked by another app.
+            callLog.log(CallLogEntry("11912345678", Instant.parse("2026-11-10T12:00:00Z"), CallLogType.ANSWERED))
+            callLog.log(CallLogEntry("21988887777", Instant.parse("2026-11-11T12:00:00Z"), CallLogType.BLOCKED))
+            callLog.grantOnRequest = true
+            val viewModel = viewModel()
+
+            viewModel.allowCallLog()
+
+            val state = viewModel.state.value
+            assertEquals(6, state.totalCount)
+            val imported = state.days.flatMap { it.entries }.filter { it.fromCallLog }
+            assertEquals(listOf(CallOutcome.REJECTED, CallOutcome.ANSWERED), imported.map { it.outcome })
+            assertEquals(RejectionReason.BLOCKED_BY_SYSTEM, imported.first().reason)
+            assertEquals("Maria", imported.last().name)
+            assertFalse(
+                state.days
+                    .flatMap { it.entries }
+                    .single { it.id == 1L }
+                    .fromCallLog,
+            )
+        }
+
+    @Test
+    fun `a deleted call from the call log is not brought in again`() =
+        runTest {
+            callLog.setGranted(true)
+            callLog.log(CallLogEntry("11912345678", Instant.parse("2026-11-10T12:00:00Z"), CallLogType.MISSED))
+            val viewModel = viewModel()
+            val imported = history.value.single { it.callLogKey != null }
+
+            viewModel.delete(imported.id)
+            viewModel().state.value
+
+            assertEquals(4, history.value.size)
+            assertTrue(history.value.none { it.callLogKey != null })
         }
 
     @Test

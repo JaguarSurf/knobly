@@ -8,12 +8,18 @@ import app.knobly.core.model.Decision
 import app.knobly.core.model.IncomingCall
 import app.knobly.core.model.RuleId
 import app.knobly.core.phone.LibPhoneNumberNormalizer
+import app.knobly.domain.port.CallLogAccess
+import app.knobly.domain.port.CallLogEntry
+import app.knobly.domain.port.CallLogType
 import app.knobly.domain.rules.call.CallFilterRuleIds
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
 import app.knobly.domain.rules.call.CustomRuleType
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -23,9 +29,10 @@ import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
-/** The recorder on top of the real Room database (in memory, bundled SQLite). */
+/** The recorder and the call log sync on top of the real Room database (in memory, bundled SQLite). */
 class CallHistoryTest {
     private val database = Room.inMemoryDatabaseBuilder<KnoblyDatabase>().buildKnoblyDatabase()
     private val history = RoomCallHistoryRepository(database.callEvents())
@@ -42,6 +49,17 @@ class CallHistoryTest {
 
     @AfterTest
     fun tearDown() = database.close()
+
+    private class FakeCallLog : CallLogAccess {
+        val entries = mutableListOf<CallLogEntry>()
+        override val isGranted: StateFlow<Boolean> = MutableStateFlow(true)
+
+        override suspend fun requestAccess() = true
+
+        override fun openAppSettings() = Unit
+
+        override fun incomingCalls(since: Instant) = entries.filter { it.timestamp >= since }
+    }
 
     private fun call(
         raw: String?,
@@ -82,9 +100,9 @@ class CallHistoryTest {
             val calls = history.calls.first()
             assertEquals(listOf(CallOutcome.RANG, CallOutcome.RANG), calls.map { it.outcome })
             assertNull(calls.first().reason)
-            assertEquals(2, history.pendingOutcomes(now - 1.days).size)
+            assertEquals(2, history.unlinked(now - 1.days).size)
 
-            history.setOutcome(calls.first().id, CallOutcome.ANSWERED)
+            history.link(calls.first().id, "key", CallOutcome.ANSWERED)
 
             assertEquals(
                 CallOutcome.ANSWERED,
@@ -93,7 +111,47 @@ class CallHistoryTest {
                     .first()
                     .outcome,
             )
-            assertEquals(listOf("11912345678"), history.pendingOutcomes(now - 1.days).map { it.number?.national })
+            assertEquals(listOf("11912345678"), history.unlinked(now - 1.days).map { it.number?.national })
+        }
+
+    @Test
+    fun `the call log is synced into the database and removed entries stay out`() =
+        runTest {
+            recorder.record(call("11912345678", now - 5.minutes), Decision.Default)
+            val callLog = FakeCallLog()
+            callLog.entries +=
+                listOf(
+                    CallLogEntry("+5511912345678", now - 5.minutes + 3.seconds, CallLogType.ANSWERED),
+                    CallLogEntry("03031234567", now - 2.days, CallLogType.BLOCKED),
+                    CallLogEntry("21987654321", now - 3.days, CallLogType.MISSED),
+                )
+            val sync = CallLogSync(history, callLog, normalizer, clock, StandardTestDispatcher(testScheduler))
+
+            sync.sync()
+            sync.sync()
+
+            val calls = history.calls.first()
+            assertEquals(
+                listOf(CallOutcome.ANSWERED, CallOutcome.REJECTED, CallOutcome.MISSED),
+                calls.map { it.outcome },
+            )
+            assertEquals(
+                listOf(CallSource.KNOBLY, CallSource.CALL_LOG, CallSource.CALL_LOG),
+                calls.map { it.source },
+            )
+            assertEquals(RejectionReason.BLOCKED_BY_SYSTEM, calls[1].reason)
+
+            history.delete(calls[2].id)
+            sync.sync()
+            assertEquals(2, history.calls.first().size)
+
+            history.clear()
+            sync.sync()
+            assertTrue(history.calls.first().isEmpty())
+
+            // The retention also forgets the removed entries.
+            history.deleteOlderThan(now + 1.days)
+            assertTrue(history.knownCallLogKeys(now - 4.days).isEmpty())
         }
 
     @Test

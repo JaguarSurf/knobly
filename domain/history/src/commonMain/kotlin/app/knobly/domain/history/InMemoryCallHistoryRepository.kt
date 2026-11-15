@@ -13,6 +13,9 @@ class InMemoryCallHistoryRepository(
     private val state = MutableStateFlow(initial.sortedWith(newestFirst))
     private var nextId = (initial.maxOfOrNull { it.id } ?: 0) + 1
 
+    /** Call log entries removed by the user, by key, with their time. */
+    private val ignored = mutableMapOf<String, Instant>()
+
     override val calls: Flow<List<CallRecord>> = state
 
     /** The current calls (test assertions). */
@@ -24,39 +27,50 @@ class InMemoryCallHistoryRepository(
     override fun callsSince(instant: Instant): Flow<List<CallRecord>> =
         state.map { calls -> calls.filter { it.timestamp >= instant } }
 
-    override suspend fun add(call: CallRecord) {
-        state.update { (it + call.copy(id = nextId++)).sortedWith(newestFirst) }
-    }
+    override suspend fun add(call: CallRecord) = addAll(listOf(call))
 
-    override suspend fun delete(id: Long) = state.update { calls -> calls.filterNot { it.id == id } }
+    override suspend fun addAll(calls: List<CallRecord>) =
+        state.update { stored -> (stored + calls.map { it.copy(id = nextId++) }).sortedWith(newestFirst) }
 
-    override suspend fun clear() = state.update { emptyList() }
-
-    override suspend fun deleteOlderThan(instant: Instant) =
+    override suspend fun delete(id: Long) =
         state.update { calls ->
-            calls.filter {
-                it.timestamp >=
-                    instant
-            }
+            calls.find { it.id == id }?.let { ignore(listOf(it)) }
+            calls.filterNot { it.id == id }
         }
 
-    override suspend fun pendingOutcomes(instant: Instant): List<CallRecord> =
-        state.value.filter { it.outcome == CallOutcome.RANG && it.timestamp >= instant }.sortedBy { it.timestamp }
-
-    override suspend fun setOutcome(
-        id: Long,
-        outcome: CallOutcome,
-    ) = state.update { calls ->
-        calls.map {
-            if (it.id == id &&
-                it.outcome == CallOutcome.RANG
-            ) {
-                it.copy(outcome = outcome)
-            } else {
-                it
-            }
+    override suspend fun clear() =
+        state.update { calls ->
+            ignore(calls)
+            emptyList()
         }
+
+    override suspend fun deleteOlderThan(instant: Instant) {
+        ignored.entries.removeAll { it.value < instant }
+        state.update { calls -> calls.filter { it.timestamp >= instant } }
     }
+
+    override suspend fun unlinked(instant: Instant): List<CallRecord> =
+        state.value
+            .filter { it.source == CallSource.KNOBLY && it.callLogKey == null && it.timestamp >= instant }
+            .sortedWith(compareBy<CallRecord> { it.timestamp }.thenBy { it.id })
+
+    override suspend fun knownCallLogKeys(instant: Instant): Set<String> =
+        state.value
+            .filter { it.timestamp >= instant }
+            .mapNotNull { it.callLogKey }
+            .toSet() +
+            ignored.filterValues { it >= instant }.keys
+
+    override suspend fun link(
+        id: Long,
+        callLogKey: String,
+        outcome: CallOutcome?,
+    ) = state.update { calls ->
+        calls.map { if (it.id == id) it.copy(callLogKey = callLogKey, outcome = outcome ?: it.outcome) else it }
+    }
+
+    private fun ignore(calls: List<CallRecord>) =
+        calls.forEach { call -> call.callLogKey?.let { ignored[it] = call.timestamp } }
 
     private companion object {
         val newestFirst = compareByDescending<CallRecord> { it.timestamp }.thenByDescending { it.id }

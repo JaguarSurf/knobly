@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.days
 /**
  * Stores every screened incoming call in the history, after the call screening has answered (never before: the
  * answer must be fast). Rejected calls keep a snapshot of the rule; calls that rang start as [CallOutcome.RANG] until
- * [CallOutcomeResolver] finds them in the call log. Also applies the retention: calls older than [retention] are
+ * [CallLogSync] finds them in the call log. Also applies the retention: calls older than [retention] are
  * removed whenever a new one is stored.
  */
 class CallHistoryRecorder(

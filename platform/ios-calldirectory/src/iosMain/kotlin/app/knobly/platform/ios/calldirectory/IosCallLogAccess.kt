@@ -9,6 +9,8 @@ import kotlin.time.Instant
 
 /** iOS gives apps no access to the call log (docs/platforms.md). */
 class IosCallLogAccess : CallLogAccess {
+    override val isAvailable: Boolean = false
+
     override val isGranted: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow()
 
     override suspend fun requestAccess(): Boolean = false

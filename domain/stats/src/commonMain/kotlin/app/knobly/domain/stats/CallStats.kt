@@ -75,6 +75,9 @@ sealed interface StatsFilter {
 
     /** Rules deleted before the call was recorded. */
     data object DeletedRule : StatsFilter
+
+    /** Blocked by the system or another app (calls brought in from the call log). */
+    data object BlockedBySystem : StatsFilter
 }
 
 /** What Home shows: calls rejected today and in the last 7 days, and the latest rejected call. */

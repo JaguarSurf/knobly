@@ -24,6 +24,10 @@ class RoomCallHistoryRepository(
         dao.insert(call.toEntity())
     }
 
+    override suspend fun addAll(calls: List<CallRecord>) {
+        if (calls.isNotEmpty()) dao.insertAll(calls.map { it.toEntity() })
+    }
+
     override suspend fun delete(id: Long) = dao.delete(id)
 
     override suspend fun clear() = dao.deleteAll()
@@ -32,26 +36,25 @@ class RoomCallHistoryRepository(
         dao.deleteOlderThan(instant.toEpochMilliseconds())
     }
 
-    override suspend fun pendingOutcomes(instant: Instant): List<CallRecord> =
-        dao.pendingOutcomes(instant.toEpochMilliseconds()).map { it.toCallRecord() }
+    override suspend fun unlinked(instant: Instant): List<CallRecord> =
+        dao.unlinked(instant.toEpochMilliseconds()).map { it.toCallRecord() }
 
-    override suspend fun setOutcome(
+    override suspend fun knownCallLogKeys(instant: Instant): Set<String> =
+        dao.knownCallLogKeys(instant.toEpochMilliseconds()).toSet()
+
+    override suspend fun link(
         id: Long,
-        outcome: CallOutcome,
+        callLogKey: String,
+        outcome: CallOutcome?,
     ) {
-        val stored =
-            when (outcome) {
-                CallOutcome.ANSWERED -> OUTCOME_ANSWERED
-                CallOutcome.MISSED -> OUTCOME_MISSED
-                CallOutcome.REJECTED, CallOutcome.RANG -> return
-            }
-        dao.setOutcome(id, stored)
+        dao.link(id, callLogKey, outcome?.stored())
     }
 }
 
 private const val REASON_CONTACTS_ONLY = "contacts_only"
 private const val REASON_CUSTOM_RULE = "custom_rule"
 private const val REASON_UNKNOWN = "unknown"
+private const val REASON_SYSTEM_BLOCKED = "system_blocked"
 private const val REASON_NONE = "none"
 private const val OUTCOME_ANSWERED = "answered"
 private const val OUTCOME_MISSED = "missed"
@@ -68,23 +71,30 @@ internal fun CallRecord.toEntity() =
                 RejectionReason.CONTACTS_ONLY -> REASON_CONTACTS_ONLY
                 RejectionReason.CUSTOM_RULE -> REASON_CUSTOM_RULE
                 RejectionReason.UNKNOWN -> REASON_UNKNOWN
+                RejectionReason.BLOCKED_BY_SYSTEM -> REASON_SYSTEM_BLOCKED
                 null -> if (outcome == CallOutcome.REJECTED) REASON_UNKNOWN else REASON_NONE
             },
         matchedRuleId = rule?.id,
         ruleType = rule?.type?.name,
         ruleValue = rule?.value,
         ruleLabel = rule?.label,
-        outcome =
-            when (outcome) {
-                CallOutcome.ANSWERED -> OUTCOME_ANSWERED
-                CallOutcome.MISSED -> OUTCOME_MISSED
-                CallOutcome.REJECTED, CallOutcome.RANG -> null
-            },
+        outcome = outcome.stored(),
+        source = if (source == CallSource.CALL_LOG) CallEventEntity.SOURCE_CALL_LOG else CallEventEntity.SOURCE_KNOBLY,
+        callLogKey = callLogKey,
     )
+
+/** Only the outcomes of calls that rang are stored; rejected calls are told apart by `action`. */
+private fun CallOutcome.stored(): String? =
+    when (this) {
+        CallOutcome.ANSWERED -> OUTCOME_ANSWERED
+        CallOutcome.MISSED -> OUTCOME_MISSED
+        CallOutcome.REJECTED, CallOutcome.RANG -> null
+    }
 
 internal fun CallEventEntity.toCallRecord(): CallRecord {
     val number = numberRaw?.let { PhoneNumber(raw = it, e164 = numberE164, national = numberNational ?: it) }
     val at = Instant.fromEpochMilliseconds(timestampUtc)
+    val source = if (source == CallEventEntity.SOURCE_CALL_LOG) CallSource.CALL_LOG else CallSource.KNOBLY
     if (action != Action.REJECT.name) {
         val outcome =
             when (outcome) {
@@ -92,7 +102,14 @@ internal fun CallEventEntity.toCallRecord(): CallRecord {
                 OUTCOME_MISSED -> CallOutcome.MISSED
                 else -> CallOutcome.RANG
             }
-        return CallRecord(id = id, timestamp = at, number = number, outcome = outcome)
+        return CallRecord(
+            id = id,
+            timestamp = at,
+            number = number,
+            outcome = outcome,
+            source = source,
+            callLogKey = callLogKey,
+        )
     }
     val ruleId = matchedRuleId
     val type = ruleType?.let { name -> CustomRuleType.entries.firstOrNull { it.name == name } }
@@ -107,12 +124,20 @@ internal fun CallEventEntity.toCallRecord(): CallRecord {
         timestamp = at,
         number = number,
         outcome = CallOutcome.REJECTED,
-        reason =
-            when (reason) {
-                REASON_CONTACTS_ONLY -> RejectionReason.CONTACTS_ONLY
-                REASON_CUSTOM_RULE -> if (snapshot != null) RejectionReason.CUSTOM_RULE else RejectionReason.UNKNOWN
-                else -> RejectionReason.UNKNOWN
-            },
+        reason = rejectionReason(reason, hasRule = snapshot != null),
         rule = snapshot,
+        source = source,
+        callLogKey = callLogKey,
     )
 }
+
+private fun rejectionReason(
+    stored: String,
+    hasRule: Boolean,
+): RejectionReason =
+    when (stored) {
+        REASON_CONTACTS_ONLY -> RejectionReason.CONTACTS_ONLY
+        REASON_CUSTOM_RULE -> if (hasRule) RejectionReason.CUSTOM_RULE else RejectionReason.UNKNOWN
+        REASON_SYSTEM_BLOCKED -> RejectionReason.BLOCKED_BY_SYSTEM
+        else -> RejectionReason.UNKNOWN
+    }

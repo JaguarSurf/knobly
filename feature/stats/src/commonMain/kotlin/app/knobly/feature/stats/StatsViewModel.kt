@@ -2,7 +2,7 @@ package app.knobly.feature.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.knobly.domain.history.CallOutcomeResolver
+import app.knobly.domain.history.CallLogSync
 import app.knobly.domain.stats.CallCategory
 import app.knobly.domain.stats.CallStatistics
 import app.knobly.domain.stats.CallStats
@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class StatsUiState(
-    val period: StatsPeriod = StatsPeriod.DAY,
+    val period: StatsPeriod = StatsPeriod.WEEK,
     val category: CallCategory = CallCategory.ALL,
     /** `null` while loading. */
     val stats: CallStats? = null,
@@ -27,12 +27,12 @@ data class StatsUiState(
     val callLogDenied: Boolean = false,
 )
 
-/** The Statistics tab (docs/specs/call-statistics.md). Opens on every call of the last 7 days. */
+/** The Statistics tab (docs/specs/call-statistics.md). Opens on every call of the last 8 weeks. */
 class StatsViewModel(
     private val statistics: CallStatistics,
-    private val outcomes: CallOutcomeResolver,
+    private val callLog: CallLogSync,
 ) : ViewModel() {
-    private val period = MutableStateFlow(StatsPeriod.DAY)
+    private val period = MutableStateFlow(StatsPeriod.WEEK)
     private val category = MutableStateFlow(CallCategory.ALL)
     private val callLogDenied = MutableStateFlow(false)
 
@@ -41,20 +41,20 @@ class StatsViewModel(
         combine(
             period.flatMapLatest { statistics.stats(it) },
             category,
-            outcomes.callLogGranted,
+            callLog.callLogGranted,
             callLogDenied,
         ) { stats, category, granted, denied ->
             StatsUiState(
                 period = stats.period,
                 category = category,
                 stats = stats,
-                askCallLog = !granted && stats.totals.rang > 0,
+                askCallLog = callLog.callLogAvailable && !granted && stats.totals.rang > 0,
                 callLogDenied = denied,
             )
         }.stateIn(viewModelScope, SharingStarted.Eagerly, StatsUiState())
 
     init {
-        viewModelScope.launch { outcomes.resolvePending() }
+        viewModelScope.launch { callLog.sync() }
     }
 
     fun setPeriod(value: StatsPeriod) = period.update { value }
@@ -62,8 +62,8 @@ class StatsViewModel(
     fun setCategory(value: CallCategory) = category.update { value }
 
     fun allowCallLog() {
-        viewModelScope.launch { callLogDenied.value = !outcomes.requestCallLogAccess() }
+        viewModelScope.launch { callLogDenied.value = !callLog.requestCallLogAccess() }
     }
 
-    fun openCallLogSettings() = outcomes.openCallLogSettings()
+    fun openCallLogSettings() = callLog.openCallLogSettings()
 }

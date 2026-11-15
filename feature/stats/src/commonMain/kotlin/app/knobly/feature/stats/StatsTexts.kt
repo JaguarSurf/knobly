@@ -12,6 +12,7 @@ import app.knobly.feature.stats.resources.stats_category_missed
 import app.knobly.feature.stats.resources.stats_category_rejected
 import app.knobly.feature.stats.resources.stats_filter_contacts
 import app.knobly.feature.stats.resources.stats_filter_deleted
+import app.knobly.feature.stats.resources.stats_filter_system
 import app.knobly.feature.stats.resources.stats_hour_label
 import app.knobly.feature.stats.resources.stats_months
 import app.knobly.feature.stats.resources.stats_period_day
@@ -116,6 +117,10 @@ internal fun StatsFilter.text(): String =
 
         StatsFilter.DeletedRule -> {
             stringResource(Res.string.stats_filter_deleted)
+        }
+
+        StatsFilter.BlockedBySystem -> {
+            stringResource(Res.string.stats_filter_system)
         }
 
         is StatsFilter.Rule -> {

@@ -10,6 +10,7 @@ import app.knobly.feature.history.resources.history_date
 import app.knobly.feature.history.resources.history_date_year
 import app.knobly.feature.history.resources.history_months
 import app.knobly.feature.history.resources.history_reason_contacts
+import app.knobly.feature.history.resources.history_reason_system
 import app.knobly.feature.history.resources.history_reason_unknown
 import app.knobly.feature.history.resources.history_rule_exact
 import app.knobly.feature.history.resources.history_rule_hidden
@@ -41,6 +42,7 @@ internal fun HistoryEntry.reasonText(): String =
     when (reason) {
         RejectionReason.CONTACTS_ONLY -> stringResource(Res.string.history_reason_contacts)
         RejectionReason.CUSTOM_RULE -> rule?.describe() ?: stringResource(Res.string.history_reason_unknown)
+        RejectionReason.BLOCKED_BY_SYSTEM -> stringResource(Res.string.history_reason_system)
         RejectionReason.UNKNOWN, null -> stringResource(Res.string.history_reason_unknown)
     }
 

@@ -15,12 +15,14 @@ import kotlinx.coroutines.IO
  * Schema changes need a new [version] and a migration; exported schemas live in `core/database/schemas/`.
  */
 @Database(
-    entities = [CallEventEntity::class],
-    version = 2,
+    entities = [CallEventEntity::class, IgnoredCallLogEntryEntity::class],
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         // 2: allowed calls are recorded too, with their outcome (answered/missed) from the call log.
         AutoMigration(from = 1, to = 2),
+        // 3: incoming calls are brought in from the system call log (source, call_log_key, ignored entries).
+        AutoMigration(from = 2, to = 3),
     ],
 )
 @ConstructedBy(KnoblyDatabaseConstructor::class)

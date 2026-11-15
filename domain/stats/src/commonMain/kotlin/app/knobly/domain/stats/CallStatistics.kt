@@ -86,6 +86,7 @@ class CallStatistics(
                 when (call.reason) {
                     RejectionReason.CONTACTS_ONLY -> FilterKey.ContactsOnly
                     RejectionReason.CUSTOM_RULE -> call.rule?.let { FilterKey.Rule(it.id) } ?: FilterKey.Deleted
+                    RejectionReason.BLOCKED_BY_SYSTEM -> FilterKey.System
                     RejectionReason.UNKNOWN, null -> FilterKey.Deleted
                 }
             }.map { (key, group) ->
@@ -93,6 +94,7 @@ class CallStatistics(
                     when (key) {
                         FilterKey.ContactsOnly -> StatsFilter.ContactsOnly
                         FilterKey.Deleted -> StatsFilter.DeletedRule
+                        FilterKey.System -> StatsFilter.BlockedBySystem
                         is FilterKey.Rule -> StatsFilter.Rule(requireNotNull(group.first().rule))
                     }
                 FilterCount(filter, group.size)
@@ -102,6 +104,8 @@ class CallStatistics(
         data object ContactsOnly : FilterKey
 
         data object Deleted : FilterKey
+
+        data object System : FilterKey
 
         data class Rule(
             val id: String,

@@ -18,6 +18,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.v2.runComposeUiTest
+import app.knobly.domain.port.CallLogEntry
+import app.knobly.domain.port.CallLogType
 import app.knobly.domain.rules.call.CallFilterSettings
 import app.knobly.domain.rules.call.CustomRule
 import app.knobly.domain.rules.call.CustomRuleType
@@ -33,6 +35,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalTestApi::class)
 class AppTest {
@@ -58,7 +61,7 @@ class AppTest {
 
             onNodeWithTag("tab.stats").performClick()
             onNodeWithTag("tab.stats").assertIsSelected()
-            onNodeWithTag(StatsTestTags.TOTAL).assertTextContains("nos últimos 7 dias", substring = true)
+            onNodeWithTag(StatsTestTags.TOTAL).assertTextContains("nas últimas 8 semanas", substring = true)
         }
 
     @Test
@@ -213,6 +216,24 @@ class AppTest {
         }
 
     @Test
+    fun `allowing the call log brings in the calls Knobly did not screen`() =
+        runComposeUiTest {
+            val env = startTestKoin(roleHeld = true, callLogGranted = false)
+            env.callLog.log(CallLogEntry("08001234567", TEST_NOW - 3.days, CallLogType.BLOCKED))
+            env.callLog.log(CallLogEntry("11912345678", TEST_NOW - 2.days, CallLogType.MISSED))
+            setContent { App() }
+            onNodeWithTag("tab.history").performClick()
+
+            onNodeWithTag(HistoryTestTags.CALL_LOG_ALLOW).performClick()
+
+            waitUntil { env.history.value.size == 2 }
+            onNodeWithTag(HistoryTestTags.CALL_LOG).assertDoesNotExist()
+            onNodeWithText("Perdida · (11) 91234-5678").assertIsDisplayed()
+            onNodeWithText("Rejeitada · Bloqueada pelo sistema").performClick()
+            onNodeWithTag(HistoryTestTags.FROM_CALL_LOG).assertTextContains("Do registro de chamadas do aparelho")
+        }
+
+    @Test
     fun `a history entry opens details and can be deleted`() =
         runComposeUiTest {
             val env = startTestKoin(roleHeld = true, history = SampleHistory.calls)
@@ -241,7 +262,8 @@ class AppTest {
 
             onNodeWithTag(HistoryTestTags.CLEAR).performClick()
             onNodeWithText(
-                "As 7 chamadas serão apagadas do histórico do Knobly (o registro de chamadas do Android não muda).",
+                "As 7 chamadas serão apagadas do histórico do Knobly " +
+                    "(o registro de chamadas do Android não muda, e elas não voltam para cá).",
             ).assertIsDisplayed()
             onNodeWithText("Cancelar").performClick()
             assertEquals(7, env.history.value.size)
@@ -261,10 +283,10 @@ class AppTest {
             setContent { App() }
             onNodeWithTag("tab.stats").performClick()
 
-            // Last 7 days: all 7 sample calls; 4 rejected by contacts only, 2 by Telemarketing.
+            // Last 8 weeks (the default): all 7 sample calls; 4 rejected by contacts only, 2 by Telemarketing.
             onNodeWithTag(
                 StatsTestTags.TOTAL,
-            ).assertTextContains("7").assertTextContains("chamadas nos últimos 7 dias")
+            ).assertTextContains("7").assertTextContains("chamadas nas últimas 8 semanas")
             onNodeWithText("Fora dos contatos").performScrollTo().assertIsDisplayed()
             onNodeWithText("Telemarketing · 0303").performScrollTo().assertIsDisplayed()
 

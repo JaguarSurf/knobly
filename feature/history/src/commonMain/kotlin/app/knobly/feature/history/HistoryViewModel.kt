@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.knobly.core.phone.PhoneNumberNormalizer
 import app.knobly.domain.history.CallHistoryRepository
+import app.knobly.domain.history.CallLogSync
 import app.knobly.domain.history.CallOutcome
-import app.knobly.domain.history.CallOutcomeResolver
 import app.knobly.domain.history.CallRecord
+import app.knobly.domain.history.CallSource
 import app.knobly.domain.history.RejectionReason
 import app.knobly.domain.history.RuleSnapshot
 import app.knobly.domain.rules.call.ContactDirectory
@@ -27,12 +28,15 @@ import kotlin.time.Clock
 /** The History chips: every incoming call, or one outcome. */
 enum class HistoryFilter { ALL, ANSWERED, MISSED, REJECTED }
 
-/** Whether to offer the call log permission (to tell answered from missed calls). */
+/**
+ * Whether to offer the call log permission: to bring in the calls Knobly did not screen and tell answered from missed
+ * calls.
+ */
 enum class CallLogPrompt {
-    /** Granted, or no call rang yet. */
+    /** Granted, or the platform has no call log (iOS). */
     NONE,
 
-    /** Not granted and some calls only "rang": offer to allow it. */
+    /** Not granted: offer to allow it. */
     ASK,
 
     /** The user refused: point to the app settings. */
@@ -61,6 +65,8 @@ data class HistoryEntry(
     val outcome: CallOutcome,
     val reason: RejectionReason?,
     val rule: RuleSnapshot?,
+    /** Brought in from the system call log (Knobly did not screen it). */
+    val fromCallLog: Boolean,
     val date: LocalDate,
     /** `HH:mm`, local time. */
     val time: String,
@@ -87,7 +93,7 @@ data class HistoryUiState(
 class HistoryViewModel(
     private val history: CallHistoryRepository,
     private val contacts: ContactDirectory,
-    private val outcomes: CallOutcomeResolver,
+    private val callLog: CallLogSync,
     private val normalizer: PhoneNumberNormalizer,
     private val clock: Clock,
     private val timeZone: TimeZone,
@@ -95,7 +101,7 @@ class HistoryViewModel(
     private val view = MutableStateFlow(ViewState())
 
     val state: StateFlow<HistoryUiState> =
-        combine(history.calls, view, outcomes.callLogGranted) { calls, view, callLogGranted ->
+        combine(history.calls, view, callLog.callLogGranted) { calls, view, callLogGranted ->
             val names = contacts.names(calls.mapNotNull { it.number })
             val entries = calls.map { it.toEntry(names[it.number]) }
             val today = clock.now().toLocalDateTime(timeZone).date
@@ -112,7 +118,7 @@ class HistoryViewModel(
                 confirmingClear = view.confirmingClear,
                 callLogPrompt =
                     when {
-                        callLogGranted || calls.none { it.outcome == CallOutcome.RANG } -> CallLogPrompt.NONE
+                        callLogGranted || !callLog.callLogAvailable -> CallLogPrompt.NONE
                         view.callLogDenied -> CallLogPrompt.DENIED
                         else -> CallLogPrompt.ASK
                     },
@@ -120,8 +126,8 @@ class HistoryViewModel(
         }.stateIn(viewModelScope, SharingStarted.Eagerly, HistoryUiState())
 
     init {
-        // Calls that rang since the app was last opened: learn from the call log how they ended.
-        viewModelScope.launch { outcomes.resolvePending() }
+        // Calls since the app was last opened: learn from the call log how they ended, and bring in the others.
+        viewModelScope.launch { callLog.sync() }
     }
 
     fun setFilter(value: HistoryFilter) = view.update { it.copy(filter = value) }
@@ -146,12 +152,12 @@ class HistoryViewModel(
 
     fun allowCallLog() {
         viewModelScope.launch {
-            val granted = outcomes.requestCallLogAccess()
+            val granted = callLog.requestCallLogAccess()
             view.update { it.copy(callLogDenied = !granted) }
         }
     }
 
-    fun openCallLogSettings() = outcomes.openCallLogSettings()
+    fun openCallLogSettings() = callLog.openCallLogSettings()
 
     private fun CallRecord.toEntry(name: String?): HistoryEntry {
         val local = timestamp.toLocalDateTime(timeZone)
@@ -162,6 +168,7 @@ class HistoryViewModel(
             outcome = outcome,
             reason = reason,
             rule = rule,
+            fromCallLog = source == CallSource.CALL_LOG,
             date = local.date,
             time = "${local.hour.twoDigits()}:${local.minute.twoDigits()}",
         )

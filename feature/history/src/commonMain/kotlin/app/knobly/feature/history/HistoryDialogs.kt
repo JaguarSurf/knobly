@@ -37,13 +37,14 @@ import app.knobly.feature.history.resources.history_clear_title
 import app.knobly.feature.history.resources.history_copied
 import app.knobly.feature.history.resources.history_copy
 import app.knobly.feature.history.resources.history_delete
+import app.knobly.feature.history.resources.history_details_from_call_log
 import app.knobly.feature.history.resources.history_details_reason
 import app.knobly.feature.history.resources.history_details_when
 import app.knobly.feature.history.resources.history_hidden_number
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Details of one rejected call, with "copy number" and "delete entry". */
+/** Details of one call (and where it came from), with "copy number" and "delete entry". */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun HistoryDetailsSheet(
@@ -91,6 +92,14 @@ internal fun HistoryDetailsSheet(
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 4.dp),
                 )
+                if (entry.fromCallLog) {
+                    Text(
+                        stringResource(Res.string.history_details_from_call_log),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary,
+                        modifier = Modifier.padding(top = 10.dp).testTag(HistoryTestTags.FROM_CALL_LOG),
+                    )
+                }
             }
             entry.number?.let { number -> CopyNumberButton(number) }
             KnoblySecondaryButton(

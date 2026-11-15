@@ -4,7 +4,7 @@ import app.knobly.core.model.PhoneNumber
 import app.knobly.domain.rules.call.CustomRuleType
 import kotlin.time.Instant
 
-/** An incoming call screened by Knobly, as shown in History and counted in Statistics. */
+/** An incoming call, as shown in History and counted in Statistics. */
 data class CallRecord(
     val id: Long,
     val timestamp: Instant,
@@ -15,11 +15,23 @@ data class CallRecord(
     val reason: RejectionReason? = null,
     /** The custom rule that rejected the call, as it was at that moment ([RejectionReason.CUSTOM_RULE] only). */
     val rule: RuleSnapshot? = null,
+    val source: CallSource = CallSource.KNOBLY,
+    /** The system call log entry of this call ([app.knobly.domain.port.CallLogEntry.key]), once known. */
+    val callLogKey: String? = null,
 )
+
+/** Where a call in the history comes from (docs/specs/call-history.md). */
+enum class CallSource {
+    /** Screened by Knobly's call screening service. */
+    KNOBLY,
+
+    /** Brought in from the system call log: Knobly did not screen it (before it was installed, or without the role). */
+    CALL_LOG,
+}
 
 /** How an incoming call ended (docs/specs/call-history.md). */
 enum class CallOutcome {
-    /** Rejected by Knobly: it never rang. */
+    /** Rejected (by Knobly, or by the system or another app): it never rang. */
     REJECTED,
 
     /** Allowed to ring; how it ended is not known (no call log access, or not in the call log yet). */
@@ -41,6 +53,9 @@ enum class RejectionReason {
 
     /** A rule that no longer exists in the settings by the time the call was recorded. */
     UNKNOWN,
+
+    /** Blocked by the system or another app, not by Knobly ([CallSource.CALL_LOG] only). */
+    BLOCKED_BY_SYSTEM,
 }
 
 /** The parts of a custom rule needed to explain a rejection, copied when the call is recorded. */

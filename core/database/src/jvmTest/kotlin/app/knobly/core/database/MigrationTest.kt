@@ -66,4 +66,34 @@ class MigrationTest {
             assertNull(event.outcome)
             database.close()
         }
+
+    @Test
+    fun `version 2 calls survive the migration to version 3 as screened by Knobly`() =
+        runTest {
+            helper.createDatabase(2).apply {
+                execSQL(
+                    "INSERT INTO call_events (timestamp_utc, number_raw, number_e164, number_national, action, " +
+                        "reason, matched_rule_id, rule_type, rule_value, rule_label, outcome) VALUES " +
+                        "(1794600000000, '11912345678', '+5511912345678', '11912345678', 'ALLOW', 'none', " +
+                        "NULL, NULL, NULL, NULL, 'answered')",
+                )
+                close()
+            }
+
+            helper.runMigrationsAndValidate(3).close()
+
+            val database =
+                androidx.room.Room
+                    .databaseBuilder<KnoblyDatabase>(name = file.toString())
+                    .buildKnoblyDatabase()
+            val dao = database.callEvents()
+            val event = dao.observeAll().first().single()
+            assertEquals("answered", event.outcome)
+            assertEquals(CallEventEntity.SOURCE_KNOBLY, event.source)
+            assertNull(event.callLogKey)
+            // Not linked to the call log yet: the next sync links it instead of bringing it in again.
+            assertEquals(listOf(event.id), dao.unlinked(0).map { it.id })
+            assertEquals(emptyList(), dao.knownCallLogKeys(0))
+            database.close()
+        }
 }

@@ -60,7 +60,7 @@ import app.knobly.feature.history.resources.history_title
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-/** The History tab: calls rejected by Knobly (docs/specs/call-history.md). */
+/** The History tab: incoming calls, screened by Knobly or from the call log (docs/specs/call-history.md). */
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
@@ -108,6 +108,9 @@ fun HistoryContent(
         if (state.loading) return@LazyColumn
 
         if (state.totalCount == 0) {
+            if (state.callLogPrompt != CallLogPrompt.NONE) {
+                item(key = "call-log") { CallLogCard(state.callLogPrompt, onAllowCallLog, onOpenCallLogSettings) }
+            }
             item(key = "empty") {
                 EmptyCard(
                     stringResource(Res.string.history_empty_title),
@@ -301,7 +304,7 @@ internal fun OutcomeBadge(
     }
 }
 
-/** Offers the call log permission, to tell the calls that rang apart (answered or missed). */
+/** Offers the call log permission: brings in the calls Knobly did not screen and tells answered from missed. */
 @Composable
 private fun CallLogCard(
     prompt: CallLogPrompt,
