@@ -146,6 +146,7 @@ Issues and pull requests are welcome. Before you start:
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`…).
 - UI changes come with a UI test or a screenshot test, and new filter rules come with rule engine tests.
 - Run `./gradlew check` before opening a pull request.
+- By contributing, you agree that your contribution is licensed under the AGPLv3 with the [app store exception](LICENSE-EXCEPTION.md).
 
 ## Documentation
 
@@ -162,4 +163,8 @@ Fonts: [Poppins](https://github.com/itfoundry/Poppins) and [Inter](https://githu
 
 ## License
 
-To be defined (Apache 2.0 or GPLv3).
+Knobly is free software, licensed under the [GNU Affero General Public License version 3](LICENSE) (AGPLv3), with an [additional permission](LICENSE-EXCEPTION.md) to publish it on app stores whose rules conflict with the AGPLv3, such as Apple's App Store. Anyone may use, study, change and share Knobly, as long as every version they distribute or offer over a network stays open under the same license. See [ADR-0012](docs/adr/0012-license-agplv3-with-app-store-exception.md) for the reasoning.
+
+### Name and icon
+
+The license covers the code, not the name "Knobly" or its icon. Forks are welcome, but please give them a different name and icon, so people always know which app they are installing.

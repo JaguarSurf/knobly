@@ -8,7 +8,7 @@ A **100% free, ad-free and open source** mobile app for Android and iOS that giv
 
 ## Non-negotiable principles
 
-1. **Free and ad-free.** No ad SDKs, no paywall.
+1. **Free, ad-free and open source.** No ad SDKs, no paywall. Licensed under the AGPLv3 with an app store exception ([LICENSE](LICENSE), [LICENSE-EXCEPTION.md](LICENSE-EXCEPTION.md), [ADR-0012](docs/adr/0012-license-agplv3-with-app-store-exception.md)).
 2. **Privacy by design.** The user's data (contacts, call history, filters) stays on the device. No ads, analytics, telemetry or remote crash reporting. A feature that uses the network needs its own ADR and must be optional. See [ADR-0011](docs/adr/0011-network-access-for-optional-features.md).
 3. **Organized, modular, reusable code that is easy to evolve.** Clear separation of responsibilities (Clean Architecture). See [architecture.md](docs/architecture.md).
 4. **Honesty about platform limits.** iOS does not allow what Android allows; do not promise parity. See [platforms.md](docs/platforms.md).
@@ -46,6 +46,7 @@ Apps → features → domain → core, with dependencies always pointing downwar
 - **Domain without platform dependencies:** no `android.*` or iOS APIs in `:domain:*` and `:core:model`.
 - **Platform capabilities behind ports:** contacts, the call screening role, permissions and incoming calls are accessed only through interfaces (ports) defined in the domain. Real adapters live in `:platform:*`; fakes are adapters too and live in `:platform:fake`. `:feature:*` modules never call platform APIs directly, not even to request a permission.
 - **Every shared library must support Android, iOS and JVM.** Otherwise the desktop harness and the JVM tests break.
+- **Every dependency must have an AGPLv3-compatible license** (e.g. Apache 2.0, MIT, BSD, LGPL, OFL for fonts). No GPLv2-only or proprietary libraries ([ADR-0012](docs/adr/0012-license-agplv3-with-app-store-exception.md)).
 - **UI text is never hard-coded:** use Compose resources in the module (`composeResources/values/strings.xml` in English as the fallback, `values-pt/strings.xml` in Portuguese) and `stringResource(Res.string.…)`. Every new string needs both languages. UI tests and screenshots run in pt-BR.
 - **Visual identity:** UI follows [docs/design/visual-identity.md](docs/design/visual-identity.md) (dark "Noturno" with mint accent, light "Noturno Partido" (lavender with dark blocks), Poppins + Inter, "Fader k" icon). Feature behavior follows the specs in `docs/specs/`.
 - **Repository assets live in `assets/`:** brand and promotional files that no build reads go in `assets/` (`assets/brand/`: icon sources and store graphics; `assets/screenshots/`: README images, copied from the Roborazzi output). Files the app loads stay where each platform requires them: `app/android/src/main/res/` (Android), `composeResources/` (Compose: fonts, strings), `iosApp/iosApp/Assets.xcassets/` (iOS). `docs/` holds documentation only.
