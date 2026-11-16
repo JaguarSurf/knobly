@@ -26,6 +26,8 @@ data class RuleEditorUiState(
     val type: CustomRuleType = CustomRuleType.PREFIX,
     val value: String = "",
     val label: String = "",
+    /** The rule also rejects numbers saved in the contacts (not offered for hidden numbers). */
+    val applyToContacts: Boolean = false,
     val error: CustomRuleError? = null,
     val testNumber: String = "",
     /** Result of trying [testNumber] against the rule being edited: `null` when there is nothing to show. */
@@ -49,7 +51,14 @@ class RuleEditorViewModel(
             viewModelScope.launch {
                 repository.rule(ruleId)?.let { rule ->
                     existing = rule
-                    mutableState.update { it.copy(type = rule.type, value = rule.value, label = rule.label) }
+                    mutableState.update {
+                        it.copy(
+                            type = rule.type,
+                            value = rule.value,
+                            label = rule.label,
+                            applyToContacts = rule.applyToContacts,
+                        )
+                    }
                 }
             }
         }
@@ -60,6 +69,8 @@ class RuleEditorViewModel(
     fun setValue(value: String) = edit { it.copy(value = value, error = null) }
 
     fun setLabel(label: String) = mutableState.update { it.copy(label = label) }
+
+    fun setApplyToContacts(apply: Boolean) = mutableState.update { it.copy(applyToContacts = apply) }
 
     fun setTestNumber(number: String) = edit { it.copy(testNumber = number) }
 
@@ -78,6 +89,7 @@ class RuleEditorViewModel(
                 value = if (current.type == CustomRuleType.HIDDEN_NUMBER) "" else current.value.trim(),
                 label = current.label.trim(),
                 enabled = existing?.enabled ?: true,
+                applyToContacts = current.applyToContacts && current.type != CustomRuleType.HIDDEN_NUMBER,
             )
         viewModelScope.launch {
             repository.saveRule(rule)

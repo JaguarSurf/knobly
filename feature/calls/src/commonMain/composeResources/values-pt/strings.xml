@@ -10,7 +10,7 @@
     <string name="filters_contacts_denied">O Knobly precisa de acesso aos seus contatos para este filtro.</string>
     <string name="filters_open_settings">Abrir configurações</string>
     <string name="filters_custom_title">Regras personalizadas</string>
-    <string name="filters_custom_subtitle">Seus contatos sempre passam.</string>
+    <string name="filters_custom_subtitle">Seus contatos passam, a não ser que a regra também se aplique a eles.</string>
     <string name="filters_custom_contacts_note">Sem acesso aos contatos, eles não ficam protegidos das suas regras.</string>
     <string name="filters_no_rules">Nenhuma regra ainda</string>
     <string name="filters_no_rules_hint">Crie regras como “começa com 0303” para rejeitar telemarketing.</string>
@@ -36,6 +36,9 @@
     <string name="rule_editor_help_hidden">Não precisa de valor: rejeita toda chamada sem número identificado.</string>
     <string name="rule_editor_help_regex">Comparada com os dígitos do número, ex.: ^0800. Somente Android.</string>
     <string name="rule_editor_label">Apelido (opcional)</string>
+    <string name="rule_editor_apply_to_contacts">Aplicar também aos contatos</string>
+    <string name="rule_editor_apply_to_contacts_help">Rejeita mesmo quem está salvo na sua agenda.</string>
+    <string name="filters_rule_applies_to_contacts">Também se aplica aos contatos</string>
     <string name="rule_editor_test">Teste um número</string>
     <string name="rule_editor_test_placeholder">ex.: 0303 123 4567</string>
     <string name="rule_editor_test_rejected">Seria rejeitada</string>

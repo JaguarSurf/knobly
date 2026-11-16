@@ -122,6 +122,15 @@ class ScreenshotTest {
         )
 
     @Test
+    fun ruleEditorAppliesToContacts() =
+        screenshot(
+            "rule-editor-applies-to-contacts",
+            tab = "tab.filters",
+            settings = SAMPLE,
+            thenClick = FiltersTestTags.rule("exact"),
+        )
+
+    @Test
     fun ruleEditorTryNumber() =
         screenshot(
             "rule-editor-try-number",
@@ -283,7 +292,13 @@ class ScreenshotTest {
                     listOf(
                         CustomRule("tm", CustomRuleType.PREFIX, "0303", "Telemarketing"),
                         CustomRule("hidden", CustomRuleType.HIDDEN_NUMBER),
-                        CustomRule("exact", CustomRuleType.EXACT_NUMBER, "(11) 4002-8922", enabled = false),
+                        CustomRule(
+                            "exact",
+                            CustomRuleType.EXACT_NUMBER,
+                            "(11) 4002-8922",
+                            enabled = false,
+                            applyToContacts = true,
+                        ),
                         CustomRule("regex", CustomRuleType.REGEX, "^0?30[34]", "Telemarketing (regex)"),
                     ),
             )

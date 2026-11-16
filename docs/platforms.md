@@ -14,7 +14,7 @@ The two platforms have very different capabilities for filtering calls. This is 
 | Reject, silence or allow | ✅ | ⚠️ block or identify only |
 | History of filtered calls | ✅ | ❌ the app does not know when it blocked a call |
 | Blocking statistics | ✅ | ❌ no data |
-| Blocking overrides contacts and recents | — | ❌ contacts and recents always take precedence |
+| Blocking overrides contacts and recents | ✅ per custom rule ("Aplicar também aos contatos"); checked on the Android 10 emulator: calls from contacts reach the `CallScreeningService` | ❌ contacts and recents always take precedence |
 
 ## Android
 

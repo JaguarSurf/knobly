@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,6 +58,7 @@ import app.knobly.feature.calls.resources.filters_new_rule
 import app.knobly.feature.calls.resources.filters_no_rules
 import app.knobly.feature.calls.resources.filters_no_rules_hint
 import app.knobly.feature.calls.resources.filters_open_settings
+import app.knobly.feature.calls.resources.filters_rule_applies_to_contacts
 import app.knobly.feature.calls.resources.filters_status_active
 import app.knobly.feature.calls.resources.filters_status_none
 import app.knobly.feature.calls.resources.filters_title
@@ -253,13 +255,17 @@ private fun RuleRow(
                 .background(if (rule.enabled && groupEnabled) c.accent else c.textSecondary.copy(alpha = 0.4f)),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                name,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = MaterialTheme.typography.labelSmall.fontWeight,
-                    ),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    name,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = MaterialTheme.typography.labelSmall.fontWeight,
+                        ),
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (rule.appliesToContacts) AppliesToContactsIcon()
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 // Without a nickname the title is already the type, so the subtitle shows only what it matches.
                 val typeText =
@@ -289,6 +295,26 @@ private fun RuleRow(
             onCheckedChange = onEnabledChange,
             enabled = groupEnabled,
             modifier = Modifier.semantics { contentDescription = name }.testTag(FiltersTestTags.ruleToggle(rule.id)),
+        )
+    }
+}
+
+/** Marks a rule that also rejects contacts ([CustomRule.applyToContacts]). */
+@Composable
+private fun AppliesToContactsIcon() {
+    val c = KnoblyTheme.colors
+    Box(
+        Modifier
+            .size(20.dp)
+            .clip(CircleShape)
+            .background(c.glassStrong),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            KnoblyIcons.Person,
+            contentDescription = stringResource(Res.string.filters_rule_applies_to_contacts),
+            tint = c.accent,
+            modifier = Modifier.size(13.dp),
         )
     }
 }

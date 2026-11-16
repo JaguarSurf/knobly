@@ -9,6 +9,8 @@ object CallFilterRuleIds {
 
     fun custom(rule: CustomRule) = RuleId("custom:${rule.id}")
 
+    /** Custom rules that also apply to contacts ([CustomRule.applyToContacts]) come before the contacts. */
+    internal const val CUSTOM_OVER_CONTACTS_PRIORITY_START = -100_000
     internal const val CONTACTS_ALLOW_PRIORITY = 0
     internal const val CUSTOM_PRIORITY_START = 100
     internal const val CONTACTS_ONLY_PRIORITY = 10_000

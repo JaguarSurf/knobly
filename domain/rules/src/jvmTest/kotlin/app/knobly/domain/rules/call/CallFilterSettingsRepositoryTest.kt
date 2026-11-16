@@ -3,11 +3,24 @@ package app.knobly.domain.rules.call
 import app.knobly.core.datastore.InMemoryDocumentStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class CallFilterSettingsRepositoryTest {
+    @Test
+    fun `settings saved before applyToContacts existed still load, with contacts protected`() {
+        // call_filters.json as written by the first releases (no applyToContacts field).
+        val old =
+            """{"contactsOnly":false,"customRulesEnabled":true,"customRules":""" +
+                """[{"id":"r1","type":"prefix","value":"0303","label":"Telemarketing","enabled":true}]}"""
+        val settings = Json { ignoreUnknownKeys = true }.decodeFromString(CallFilterSettings.serializer(), old)
+
+        assertEquals(CustomRule("r1", CustomRuleType.PREFIX, "0303", "Telemarketing"), settings.customRules.single())
+        assertEquals(false, settings.customRules.single().applyToContacts)
+    }
+
     @Test
     fun `toggles, saving, editing and deleting rules`() =
         runTest {

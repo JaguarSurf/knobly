@@ -10,7 +10,7 @@
     <string name="filters_contacts_denied">Knobly needs access to your contacts for this filter.</string>
     <string name="filters_open_settings">Open settings</string>
     <string name="filters_custom_title">Custom rules</string>
-    <string name="filters_custom_subtitle">Your contacts always pass.</string>
+    <string name="filters_custom_subtitle">Your contacts pass, unless a rule also applies to them.</string>
     <string name="filters_custom_contacts_note">Without access to your contacts, they are not protected from your rules.</string>
     <string name="filters_no_rules">No rules yet</string>
     <string name="filters_no_rules_hint">Create rules like “starts with 0303” to reject telemarketing.</string>
@@ -36,6 +36,9 @@
     <string name="rule_editor_help_hidden">Needs no value: rejects every call without caller ID.</string>
     <string name="rule_editor_help_regex">Matched against the number’s digits, e.g. ^0800. Android only.</string>
     <string name="rule_editor_label">Nickname (optional)</string>
+    <string name="rule_editor_apply_to_contacts">Apply to contacts too</string>
+    <string name="rule_editor_apply_to_contacts_help">Rejects even numbers saved in your contacts.</string>
+    <string name="filters_rule_applies_to_contacts">Also applies to contacts</string>
     <string name="rule_editor_test">Try a number</string>
     <string name="rule_editor_test_placeholder">e.g. 0303 123 4567</string>
     <string name="rule_editor_test_rejected">Would be rejected</string>

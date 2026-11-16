@@ -85,6 +85,65 @@ class CallFiltersTest {
         }
 
     @Test
+    fun `a custom rule that applies to contacts rejects them too`() =
+        runTest {
+            val settings =
+                CallFilterSettings(
+                    customRulesEnabled = true,
+                    customRules =
+                        listOf(
+                            rule(CustomRuleType.PREFIX, "011").copy(applyToContacts = true),
+                            rule(CustomRuleType.PREFIX, "021"),
+                        ),
+                )
+            // The contact starts with 011: this rule applies to contacts, so it is rejected.
+            assertEquals(
+                Decision(Action.REJECT, CallFilterRuleIds.custom(settings.customRules[0])),
+                screen(settings, "011 91234-5678"),
+            )
+            // The other rules still let contacts through.
+            val contactFromRio = "(21) 99876-5432"
+            assertEquals(
+                Decision(Action.ALLOW, CallFilterRuleIds.CONTACTS_ALLOW),
+                screen(settings, contactFromRio, TestContacts(listOf(contact, contactFromRio))),
+            )
+            assertEquals(Action.REJECT, screen(settings, contactFromRio).action)
+        }
+
+    @Test
+    fun `an exact number rule that applies to contacts blocks a saved contact`() =
+        runTest {
+            val settings =
+                CallFilterSettings(
+                    customRulesEnabled = true,
+                    customRules =
+                        listOf(
+                            rule(CustomRuleType.EXACT_NUMBER, "11 91234-5678").copy(applyToContacts = true),
+                        ),
+                )
+            assertEquals(Action.REJECT, screen(settings, contact).action)
+            assertEquals(
+                Action.REJECT,
+                screen(settings, contact, TestContacts(listOf(contact), granted = false)).action,
+            )
+            assertEquals(Decision.Default, screen(settings, stranger))
+        }
+
+    @Test
+    fun `applying to contacts changes nothing for hidden numbers or disabled rules`() =
+        runTest {
+            val hidden = rule(CustomRuleType.HIDDEN_NUMBER).copy(applyToContacts = true)
+            assertEquals(false, hidden.appliesToContacts)
+            val hiddenSettings = CallFilterSettings(customRulesEnabled = true, customRules = listOf(hidden))
+            assertEquals(Action.REJECT, screen(hiddenSettings, null).action)
+            assertEquals(Action.ALLOW, screen(hiddenSettings, contact).action)
+
+            val disabled = rule(CustomRuleType.PREFIX, "011", enabled = false).copy(applyToContacts = true)
+            val disabledSettings = CallFilterSettings(customRulesEnabled = true, customRules = listOf(disabled))
+            assertEquals(Decision.Default, screen(disabledSettings, "011 91234-5678"))
+        }
+
+    @Test
     fun `custom rules group switch and per-rule switches`() =
         runTest {
             val telemarketing = rule(CustomRuleType.PREFIX, "0303")

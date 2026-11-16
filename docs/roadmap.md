@@ -9,7 +9,7 @@ flowchart LR
 
 - [x] Minimal KMP project with a working `CallScreeningService`
 - [ ] Test on Samsung, Xiaomi, Motorola and Pixel (Android 10 to 17)
-- [ ] Confirm the behavior with numbers that are in the contacts (emulator: contact calls reach the service and are allowed; still to check on real devices)
+- [ ] Confirm the behavior with numbers that are in the contacts (emulator: contact calls reach the service and are allowed; on Android 10 also checked that a rule that applies to contacts rejects them; still to check on real devices)
 - [x] Measure the rule engine's response time inside the service (emulator; repeat on real devices)
 
 Emulator results (Android 17 / API 37, 2026-11-14): the role request dialog grants `ROLE_CALL_SCREENING`; `0303` calls are rejected (call log type "blocked"), `0304` calls are silenced and other calls ring. Normalization + rule evaluation take ~1–4 ms per call, ~70–80 ms on the first call of a process (libphonenumber metadata loading). With the app process killed, the system starts it for the bound `CallScreeningService` and the call is still screened.

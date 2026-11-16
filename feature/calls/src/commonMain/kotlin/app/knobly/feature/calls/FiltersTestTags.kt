@@ -13,6 +13,7 @@ object FiltersTestTags {
 
     const val EDITOR_VALUE = "ruleEditor.value"
     const val EDITOR_LABEL = "ruleEditor.label"
+    const val EDITOR_APPLY_TO_CONTACTS = "ruleEditor.applyToContacts"
     const val EDITOR_TEST = "ruleEditor.test"
     const val EDITOR_TEST_RESULT = "ruleEditor.testResult"
     const val EDITOR_SAVE = "ruleEditor.save"

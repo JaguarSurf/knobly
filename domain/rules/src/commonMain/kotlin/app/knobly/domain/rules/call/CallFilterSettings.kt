@@ -23,7 +23,12 @@ data class CallFilterSettings(
     }
 }
 
-/** A user-defined rule: `type + value`, plus a label and its own on/off switch. */
+/**
+ * A user-defined rule: `type + value`, plus a label and its own on/off switch.
+ *
+ * Contacts always pass custom rules, unless [applyToContacts] is on: then the rule also rejects numbers saved in the
+ * contacts. It has no effect on [CustomRuleType.HIDDEN_NUMBER] (a hidden number is never a contact).
+ */
 @Serializable
 data class CustomRule(
     val id: String,
@@ -31,7 +36,13 @@ data class CustomRule(
     val value: String = "",
     val label: String = "",
     val enabled: Boolean = true,
-)
+    // Added after the first release: the default keeps rules saved before it working as they did.
+    val applyToContacts: Boolean = false,
+) {
+    /** Whether this rule is evaluated before "contacts always pass" (see [applyToContacts]). */
+    val appliesToContacts: Boolean
+        get() = applyToContacts && type != CustomRuleType.HIDDEN_NUMBER
+}
 
 @Serializable
 enum class CustomRuleType {

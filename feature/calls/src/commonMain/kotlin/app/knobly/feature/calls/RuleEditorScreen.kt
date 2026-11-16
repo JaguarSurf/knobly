@@ -39,8 +39,11 @@ import app.knobly.core.designsystem.KnoblyPrimaryButton
 import app.knobly.core.designsystem.KnoblySecondaryButton
 import app.knobly.core.designsystem.KnoblyTextField
 import app.knobly.core.designsystem.KnoblyTheme
+import app.knobly.core.designsystem.KnoblyToggleRow
 import app.knobly.domain.rules.call.CustomRuleType
 import app.knobly.feature.calls.resources.Res
+import app.knobly.feature.calls.resources.rule_editor_apply_to_contacts
+import app.knobly.feature.calls.resources.rule_editor_apply_to_contacts_help
 import app.knobly.feature.calls.resources.rule_editor_back
 import app.knobly.feature.calls.resources.rule_editor_delete
 import app.knobly.feature.calls.resources.rule_editor_edit_title
@@ -78,6 +81,7 @@ fun RuleEditorScreen(
         onTypeChange = viewModel::setType,
         onValueChange = viewModel::setValue,
         onLabelChange = viewModel::setLabel,
+        onApplyToContactsChange = viewModel::setApplyToContacts,
         onTestNumberChange = viewModel::setTestNumber,
         onSave = viewModel::save,
         onDelete = viewModel::delete,
@@ -92,6 +96,7 @@ fun RuleEditorContent(
     onTypeChange: (CustomRuleType) -> Unit,
     onValueChange: (String) -> Unit,
     onLabelChange: (String) -> Unit,
+    onApplyToContactsChange: (Boolean) -> Unit,
     onTestNumberChange: (String) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
@@ -178,6 +183,24 @@ fun RuleEditorContent(
                 label = stringResource(Res.string.rule_editor_label),
                 modifier = Modifier.testTag(FiltersTestTags.EDITOR_LABEL),
             )
+
+            // A hidden number is never a contact, so the option would do nothing there.
+            if (state.type != CustomRuleType.HIDDEN_NUMBER) {
+                GlassCard(
+                    Modifier.fillMaxWidth(),
+                    cornerRadius = 22.dp,
+                    contentPadding = PaddingValues(horizontal = 18.dp),
+                ) {
+                    KnoblyToggleRow(
+                        title = stringResource(Res.string.rule_editor_apply_to_contacts),
+                        subtitle = stringResource(Res.string.rule_editor_apply_to_contacts_help),
+                        icon = KnoblyIcons.Person,
+                        checked = state.applyToContacts,
+                        onCheckedChange = onApplyToContactsChange,
+                        modifier = Modifier.testTag(FiltersTestTags.EDITOR_APPLY_TO_CONTACTS),
+                    )
+                }
+            }
 
             if (state.type != CustomRuleType.HIDDEN_NUMBER) {
                 GlassCard(Modifier.fillMaxWidth(), cornerRadius = 22.dp) {

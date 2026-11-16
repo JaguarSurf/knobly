@@ -1,7 +1,7 @@
 # Spec: call filters (Filters tab)
 
 - **Status:** implemented on Android (iOS: see [platforms.md](../platforms.md))
-- **Date:** 2026-11-14
+- **Date:** 2026-11-14 (rules that also apply to contacts: 2026-11-16)
 
 ## Goal
 
@@ -32,11 +32,14 @@ Custom rule types:
 
 Each rule can be paused (toggle), edited and deleted. Rules are not reordered.
 
+**Apply to contacts too** ("Aplicar também aos contatos"): an option of each prefix, exact number and regex rule, off by default. When on, the rule also rejects numbers saved in the contacts (e.g. to block a saved number, or a whole prefix including saved numbers). It is not offered for hidden numbers, which are never contacts. In the rule list, such a rule shows a small person icon next to its name, announced by screen readers as "Também se aplica aos contatos". Stored as `applyToContacts` in `call_filters.json` (default `false`, so rules saved before it keep protecting contacts). Android only: on iOS contacts always take precedence ([platforms.md](../platforms.md)).
+
 ## How filters combine
 
 - Filters **add up**: a call is rejected if **any** enabled filter matches.
-- **Contacts always pass**: a number saved in the contacts is never rejected, even if it matches a custom rule. Contacts saved without the 9th digit, the DDD or the country code count too ([phone-number-matching.md](phone-number-matching.md)).
-- There is no user-visible priority. Internally the rule engine evaluates an allow rule for contacts first, then the reject rules; with a single action this is equivalent to the union of the filters. Future exceptions (e.g. "always allow") will also win over filters.
+- **Contacts pass**: a number saved in the contacts is not rejected by "contacts only" or by a custom rule, **unless that custom rule also applies to contacts**. Contacts saved without the 9th digit, the DDD or the country code count too ([phone-number-matching.md](phone-number-matching.md)).
+- There is no user-visible priority. Internally the rule engine evaluates the custom rules that also apply to contacts first, then an allow rule for contacts, then the other reject rules; with a single action this is equivalent to the union of the filters. Future exceptions (e.g. "always allow") will also win over filters.
+- A rule that applies to contacts works without the contacts permission too (it does not need to know who is a contact).
 
 ## Action: Reject
 

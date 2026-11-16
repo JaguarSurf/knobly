@@ -94,6 +94,29 @@ class RuleEditorViewModelTest {
         }
 
     @Test
+    fun `applying to contacts is loaded, saved, and dropped for hidden numbers`() =
+        runTest {
+            repository.saveRule(CustomRule("r1", CustomRuleType.PREFIX, "0303", applyToContacts = true))
+            val editor = RuleEditorViewModel("r1", repository, normalizer)
+            assertTrue(editor.state.value.applyToContacts)
+
+            editor.setApplyToContacts(false)
+            editor.save()
+            assertEquals(false, repository.rule("r1")?.applyToContacts)
+
+            val hidden = RuleEditorViewModel(null, repository, normalizer)
+            hidden.setType(CustomRuleType.HIDDEN_NUMBER)
+            hidden.setApplyToContacts(true)
+            hidden.save()
+            val saved =
+                repository.settings
+                    .first()
+                    .customRules
+                    .single { it.type == CustomRuleType.HIDDEN_NUMBER }
+            assertEquals(false, saved.applyToContacts)
+        }
+
+    @Test
     fun `trying a number uses the real rule`() =
         runTest {
             val viewModel = RuleEditorViewModel(null, repository, normalizer)

@@ -9,7 +9,8 @@ import app.knobly.domain.rules.Rule
  * Turns the user's [CallFilterSettings] into engine rules.
  *
  * Filters add up (any enabled filter rejects), with one exception: contacts always pass, so an allow rule for
- * contacts comes first whenever any filter is on. With every filter off the list is empty and every call rings.
+ * contacts comes before the filters whenever any filter is on. Only the custom rules that also apply to contacts
+ * ([CustomRule.applyToContacts]) come before it. With every filter off the list is empty and every call rings.
  */
 fun buildCallRules(
     settings: CallFilterSettings,
@@ -20,11 +21,13 @@ fun buildCallRules(
             settings.customRules
                 .filter { it.enabled }
                 .mapIndexedNotNull { index, rule ->
-                    buildCustomRule(
-                        rule,
-                        CallFilterRuleIds.CUSTOM_PRIORITY_START + index,
-                        normalizer,
-                    )
+                    val start =
+                        if (rule.appliesToContacts) {
+                            CallFilterRuleIds.CUSTOM_OVER_CONTACTS_PRIORITY_START
+                        } else {
+                            CallFilterRuleIds.CUSTOM_PRIORITY_START
+                        }
+                    buildCustomRule(rule, start + index, normalizer)
                 }
         } else {
             emptyList()

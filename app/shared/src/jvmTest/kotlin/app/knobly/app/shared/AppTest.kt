@@ -2,10 +2,12 @@ package app.knobly.app.shared
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -125,6 +127,33 @@ class AppTest {
 
             onNodeWithTag("tab.home").performClick()
             onNodeWithText("1 filtro ativo", substring = true).assertIsDisplayed()
+        }
+
+    @Test
+    fun `a rule that applies to contacts is saved and marked in the list`() =
+        runComposeUiTest {
+            val rule = CustomRule("r1", CustomRuleType.EXACT_NUMBER, "(11) 91234-5678", "Ex")
+            val env =
+                startTestKoin(
+                    roleHeld = true,
+                    settings = CallFilterSettings(customRulesEnabled = true, customRules = listOf(rule)),
+                )
+            setContent { App() }
+
+            onNodeWithTag("tab.filters").performClick()
+            // The icon is part of the rule's row: screen readers announce it with the rule.
+            val marked = hasContentDescription("Também se aplica aos contatos", substring = true)
+            onNodeWithTag(FiltersTestTags.rule("r1")).performScrollTo().assert(!marked)
+            onNodeWithTag(FiltersTestTags.rule("r1")).performScrollTo().performClick()
+            onNodeWithTag(FiltersTestTags.EDITOR_APPLY_TO_CONTACTS).performScrollTo().performClick()
+            onNodeWithTag(FiltersTestTags.EDITOR_SAVE).performClick()
+
+            assertTrue(
+                env.settings.value.customRules
+                    .single()
+                    .applyToContacts,
+            )
+            onNodeWithTag(FiltersTestTags.rule("r1")).performScrollTo().assert(marked)
         }
 
     @Test
