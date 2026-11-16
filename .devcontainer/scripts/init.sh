@@ -6,9 +6,6 @@ CURRENT_DIR=$(dirname "$0")
 DEVCONTAINER_DIR="$CURRENT_DIR/.."
 PROJECT_DIR="$DEVCONTAINER_DIR/.."
 
-# Ensures the .ssh folder exists on the host
-mkdir -p ~/.ssh
-
 # Create .local folder
 mkdir -p "$PROJECT_DIR/.local"
 mkdir -p "$PROJECT_DIR/.local/share/opencode"

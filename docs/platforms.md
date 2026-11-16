@@ -22,7 +22,7 @@ The two platforms have very different capabilities for filtering calls. This is 
 - **Minimum:** Android 10 (API 29). Below that, only by being the default dialer, which is out of scope.
 - **Possible responses:** `setDisallowCall`, `setRejectCall`, `setSilenceCall`, `setSkipCallLog`, `setSkipNotification`.
 - **Permissions:** `READ_CONTACTS` (for the contacts filter), `READ_CALL_LOG` (optional: bring the incoming calls of the call log into History and tell whether calls that rang were answered or missed, see [ADR-0008](adr/0008-incoming-call-history-and-call-log.md) and [ADR-0009](adr/0009-bring-in-calls-from-the-call-log.md); a restricted permission on the Play Store that needs a declaration) and `POST_NOTIFICATIONS` (optional).
-- **To validate in the spike:** the documentation indicates that the system may not forward calls from numbers in the contacts to the service. Test on Samsung, Xiaomi, Motorola and Pixel.
+- **Calls from contacts:** the documentation indicates that the system may not forward calls from numbers in the contacts to the service. On the emulator (Android 10 and 17) they do reach it; still to confirm on Samsung, Xiaomi, Motorola and Pixel.
 
 ## iOS
 

@@ -49,7 +49,7 @@ The only action for now. The call is answered by the `CallScreeningService` with
 - the call is hidden from the system call log as far as Android allows: the platform still records it with type `CallLog.Calls.BLOCKED_TYPE` regardless of `setSkipCallLog`, and whether the phone app shows blocked calls depends on the phone app;
 - it **is** recorded in Knobly's own History tab, so the user can check what was blocked (see [call-history.md](call-history.md)).
 
-Outside the app's control: the caller hears busy/voicemail depending on the carrier, and some manufacturers may behave differently (to be checked on real devices, see [roadmap.md](../roadmap.md)).
+Outside the app's control: the caller hears busy/voicemail depending on the carrier, and some manufacturers may behave differently (to be checked on real devices).
 
 ## Contacts permission
 
@@ -71,4 +71,4 @@ pt-BR first, English as fallback (Compose Multiplatform resources). Code and ide
 
 ## Out of scope for now
 
-Actions other than Reject (silence, notify), presets, "always allow" list, schedules, repeat callers, temporary release, neighbor spoofing (see [roadmap.md](../roadmap.md)).
+Actions other than Reject (silence, notify), presets, "always allow" list, schedules, repeat callers, temporary release, neighbor spoofing.

@@ -41,7 +41,6 @@ include(":feature:home")
 include(":feature:calls")
 include(":feature:history")
 include(":feature:stats")
-include(":feature:settings")
 include(":feature:onboarding")
 
 // Domain

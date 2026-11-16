@@ -9,7 +9,7 @@ A **100% free, ad-free and open source** mobile app for Android and iOS that giv
 ## Non-negotiable principles
 
 1. **Free and ad-free.** No ad SDKs, no paywall.
-2. **Privacy by design.** Everything runs and stays on the device. The MVP **does not declare the `INTERNET` permission**. No analytics, no telemetry. See [ADR-0003](docs/adr/0003-offline-first-no-internet.md).
+2. **Privacy by design.** The user's data (contacts, call history, filters) stays on the device. No ads, analytics, telemetry or remote crash reporting. A feature that uses the network needs its own ADR and must be optional. See [ADR-0011](docs/adr/0011-network-access-for-optional-features.md).
 3. **Organized, modular, reusable code that is easy to evolve.** Clear separation of responsibilities (Clean Architecture). See [architecture.md](docs/architecture.md).
 4. **Honesty about platform limits.** iOS does not allow what Android allows; do not promise parity. See [platforms.md](docs/platforms.md).
 
@@ -22,14 +22,14 @@ Agents may use Git commands only to read repository state, such as `git status`,
 - **Kotlin Multiplatform (KMP)** + **Compose Multiplatform** (shared UI). See [ADR-0001](docs/adr/0001-kotlin-multiplatform.md).
 - Targets: **Android**, **iOS** and **JVM desktop** (the desktop target is a development harness only, never shipped). See [ADR-0005](docs/adr/0005-desktop-harness-and-platform-ports.md).
 - Navigation Compose (KMP), ViewModel (KMP), Coroutines/Flow
-- Room (KMP) for persistence, DataStore (KMP) for preferences
+- Room (KMP) for the call history, DataStore (KMP, okio) for JSON documents (filters, app settings)
 - Koin for dependency injection
 - kotlinx-datetime, kotlinx-serialization
 - libphonenumber (Android and JVM) / PhoneNumberKit (iOS) via `expect/actual` for number normalization
 - Charts drawn with Compose Canvas in the design system (`KnoblyLineChart`), no chart library
-- WorkManager (Android) / BGTaskScheduler (iOS) for periodic tasks
+- Periodic tasks, if ever needed: WorkManager (Android) / BGTaskScheduler (iOS); none is used yet
 - Compose Hot Reload for fast UI iteration on the desktop harness
-- Tests: kotlin.test, Turbine, Compose UI tests (`runComposeUiTest`), Roborazzi (screenshot tests), Robolectric
+- Tests: kotlin.test, Turbine, Compose UI tests (`runComposeUiTest`), Roborazzi (screenshot tests)
 - Quality: Detekt, ktlint. CI: GitHub Actions
 
 ## Architecture in one sentence
@@ -48,6 +48,7 @@ Apps → features → domain → core, with dependencies always pointing downwar
 - **Every shared library must support Android, iOS and JVM.** Otherwise the desktop harness and the JVM tests break.
 - **UI text is never hard-coded:** use Compose resources in the module (`composeResources/values/strings.xml` in English as the fallback, `values-pt/strings.xml` in Portuguese) and `stringResource(Res.string.…)`. Every new string needs both languages. UI tests and screenshots run in pt-BR.
 - **Visual identity:** UI follows [docs/design/visual-identity.md](docs/design/visual-identity.md) (dark "Noturno" with mint accent, light "Noturno Partido" (lavender with dark blocks), Poppins + Inter, "Fader k" icon). Feature behavior follows the specs in `docs/specs/`.
+- **Repository assets live in `assets/`:** brand and promotional files that no build reads go in `assets/` (`assets/brand/`: icon sources and store graphics; `assets/screenshots/`: README images, copied from the Roborazzi output). Files the app loads stay where each platform requires them: `app/android/src/main/res/` (Android), `composeResources/` (Compose: fonts, strings), `iosApp/iosApp/Assets.xcassets/` (iOS). `docs/` holds documentation only.
 - **UI changes come with tests:** a Compose UI test and/or a Roborazzi screenshot for new or changed screens.
 - **Every new filter rule** is an implementation of `Rule` + a UI form; do not change the engine to add a type.
 - **Tests are mandatory** for the rule engine and for number normalization and matching (Brazilian cases: +55, DDD area codes, 9th digit, numbers saved without DDD, hidden number, 0303/0304; see [specs/phone-number-matching.md](docs/specs/phone-number-matching.md)).
@@ -73,7 +74,7 @@ Users keep their filters and history across updates. Details in [ADR-0007](docs/
 Use the cheapest layer that covers the change (details in [ADR-0005](docs/adr/0005-desktop-harness-and-platform-ports.md)):
 
 1. **Desktop harness + fakes** (`:app:desktop`, X11 from the devcontainer, Hot Reload): screens, navigation, and the full rule → history → stats flow through the incoming call simulator.
-2. **JVM tests** (UI tests + Roborazzi screenshots): run on every change and in CI. Agents can open the generated PNGs to review UI changes.
+2. **JVM tests** (UI tests + Roborazzi screenshots): run on every change and in CI. CI does not record the PNGs: record them locally, and agents can open them to review UI changes.
 3. **Android emulator on demand** (KVM in the devcontainer): role request, permissions, `CallScreeningService` (`adb emu gsm call <number>`).
 4. **Physical device:** before releases and for manufacturer-specific behavior.
 
@@ -111,10 +112,10 @@ scripts/diagnose-screening.sh <last digits>  # why a call rang or was rejected (
 
 Notes for agents:
 
-- Verify with the APK permissions (`aapt2 dump permissions <apk>`) that `android.permission.INTERNET` is never requested.
+- When adding a dependency, check the APK permissions (`aapt2 dump permissions <apk>`): a library can add permissions (e.g. `INTERNET`) to the merged manifest.
 - Desktop/JVM UI tests need a test `Dispatchers.Main` (see `app/shared/src/jvmTest/.../TestHarness.kt`).
 - Kotlin/Native (iOS) test names cannot contain `,` `.` `:` and similar characters, even in backticks.
 
 ## Current status
 
-Phase: **Android MVP**. The app has four tabs (Início, Filtros, Histórico, Estatísticas) in pt-BR and English, the design system and the launcher icon. The Filters tab implements [specs/call-filters.md](docs/specs/call-filters.md): the call screening role card, "contacts only" (with the `READ_CONTACTS` flow), and custom rules (prefix, exact number, hidden number, regex) persisted as JSON and screened by `CallScreener` in the `CallScreeningService`. The History tab ([specs/call-history.md](docs/specs/call-history.md)) lists every incoming call (answered, missed, rejected; outcomes from the optional call log, [ADR-0008](docs/adr/0008-incoming-call-history-and-call-log.md)) stored in Room (`:core:database`, schema v3, `:domain:history`) with no retention limit ([ADR-0010](docs/adr/0010-keep-the-call-history-without-a-retention-limit.md)), with contact names; with the call log permission, the incoming calls Knobly did not screen are brought in from the system call log too ([ADR-0009](docs/adr/0009-bring-in-calls-from-the-call-log.md)). The Statistics tab ([specs/call-statistics.md](docs/specs/call-statistics.md)) charts them per hour, day, week, month and year and per category, and Home shows today's and the last 7 days' rejections plus the latest one. Contacts and "exact number" rules match with or without the country code, the DDD and the 9th digit ([specs/phone-number-matching.md](docs/specs/phone-number-matching.md)). The theme (System, Light, Dark) is chosen on the Home header ([specs/appearance.md](docs/specs/appearance.md)). See [roadmap.md](docs/roadmap.md).
+Phase: **Android MVP**. The app has four tabs (Início, Filtros, Histórico, Estatísticas) in pt-BR and English, the design system and the launcher icon. The Filters tab implements [specs/call-filters.md](docs/specs/call-filters.md): the call screening role card, "contacts only" (with the `READ_CONTACTS` flow), and custom rules (prefix, exact number, hidden number, regex) persisted as JSON and screened by `CallScreener` in the `CallScreeningService`. The History tab ([specs/call-history.md](docs/specs/call-history.md)) lists every incoming call (answered, missed, rejected; outcomes from the optional call log, [ADR-0008](docs/adr/0008-incoming-call-history-and-call-log.md)) stored in Room (`:core:database`, schema v3, `:domain:history`) with no retention limit ([ADR-0010](docs/adr/0010-keep-the-call-history-without-a-retention-limit.md)), with contact names; with the call log permission, the incoming calls Knobly did not screen are brought in from the system call log too ([ADR-0009](docs/adr/0009-bring-in-calls-from-the-call-log.md)). The Statistics tab ([specs/call-statistics.md](docs/specs/call-statistics.md)) charts them per hour, day, week, month and year and per category, and Home shows today's and the last 7 days' rejections plus the latest one. Contacts and "exact number" rules match with or without the country code, the DDD and the 9th digit ([specs/phone-number-matching.md](docs/specs/phone-number-matching.md)). The theme (System, Light, Dark) is chosen on the Home header ([specs/appearance.md](docs/specs/appearance.md)).

@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * The Knobly mark, "Fader k": the k whose stem is a fader, with the control handle where the arms meet.
- * Drawn on a 96-unit grid, like docs/design/knobly-icon-dark.svg.
+ * Drawn on a 96-unit grid, like assets/brand/knobly-icon-dark.svg.
  */
 @Composable
 fun KnoblyMark(

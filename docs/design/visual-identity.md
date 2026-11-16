@@ -75,9 +75,9 @@ The "k" of Knobly whose stem is a fader, with the control handle where the arms 
 
 | Variant | Source |
 |---|---|
-| Dark (default launcher icon) | [knobly-icon-dark.svg](knobly-icon-dark.svg) |
-| Light | [knobly-icon-light.svg](knobly-icon-light.svg) |
-| Play Store (512 px, opaque) | [knobly-icon-playstore-512.png](knobly-icon-playstore-512.png) |
+| Dark (default launcher icon) | [knobly-icon-dark.svg](../../assets/brand/knobly-icon-dark.svg) |
+| Light | [knobly-icon-light.svg](../../assets/brand/knobly-icon-light.svg) |
+| Play Store (512 px, opaque) | [knobly-icon-playstore-512.png](../../assets/brand/knobly-icon-playstore-512.png) |
 
 Where it is used:
 

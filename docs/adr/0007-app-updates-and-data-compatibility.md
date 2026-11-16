@@ -37,7 +37,7 @@ Until now `versionCode` was fixed at `1`, so installed builds could not be told 
 
 ### Backup
 
-`android:allowBackup="false"` stays: the data never leaves the device (ADR-0003). The consequence is that a new phone starts empty, until a local export/import exists (roadmap v1.1).
+`android:allowBackup="false"` stays: the data never leaves the device (ADR-0003). The consequence is that a new phone starts empty, until a local export/import exists.
 
 ## Alternatives considered
 

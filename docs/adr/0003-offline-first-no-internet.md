@@ -1,6 +1,6 @@
 # ADR-0003: Offline and no internet permission
 
-- **Status:** proposed
+- **Status:** superseded by [ADR-0011](0011-network-access-for-optional-features.md)
 - **Date:** 2026-11-13
 
 ## Context

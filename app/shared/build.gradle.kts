@@ -25,7 +25,6 @@ kotlin {
             implementation(projects.feature.calls)
             implementation(projects.feature.history)
             implementation(projects.feature.stats)
-            implementation(projects.feature.settings)
             implementation(projects.feature.onboarding)
             implementation(libs.androidx.navigation.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)

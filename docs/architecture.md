@@ -25,7 +25,6 @@ flowchart TD
         FC[":feature:calls<br/>call rules"]
         FH[":feature:history"]
         FS[":feature:stats"]
-        FSet[":feature:settings"]
         FO[":feature:onboarding"]
     end
 
@@ -51,16 +50,16 @@ flowchart TD
     end
 
     AA & IA & AD --> AS
-    AS --> FHome & FC & FH & FS & FSet & FO
+    AS --> FHome & FC & FH & FS & FO
     AA --> PA
     AS -. iOS only .-> PI
     AD --> PF
 
-    FHome & FC & FSet & FO --> DR
+    FHome & FC & FO --> DR
     FH --> DH
     FHome --> DS & DSet
     FS --> DS
-    FHome & FC & FH & FS & FSet & FO --> CDes
+    FHome & FC & FH & FS & FO --> CDes
 
     PA --> DR & DH
     PI --> DR
@@ -86,13 +85,12 @@ flowchart TD
 | `:domain:settings` | App preferences (`AppSettings`: theme), see [specs/appearance.md](specs/appearance.md) |
 | `:domain:stats` | Statistics of incoming calls: counts per category (answered, missed, rejected) and bucket in the local time zone, rejections per filter, Home summary |
 | `:feature:home` | Control center (the **Início** tab): status of each module and the way into its controls; future modules (messages, notifications) appear here |
-| `:feature:calls` | Screens to create, edit, reorder and enable call rules |
-| `:feature:history` | The **Histórico** tab: rejected calls by day, filters, details sheet, clear history |
+| `:feature:calls` | The **Filtros** tab: contacts only, custom rules and the rule editor (create, edit, pause, delete, test a number) |
+| `:feature:history` | The **Histórico** tab: every incoming call (answered, missed, rejected) by day, filters by outcome, details sheet, clear history |
 | `:feature:stats` | The **Estatísticas** tab: period selector, total and line chart, counts per filter |
-| `:feature:settings` | General settings, backup, import/export |
 | `:feature:onboarding` | Call filtering setup: the "Call filtering is off" card (shown in the Filters tab by `:app:shared`) that requests the call screening role; on iOS, guides the user to the native features |
-| `:platform:android-screening` | `CallScreeningService` + block notifications |
-| `:platform:ios-calldirectory` | Exports compatible rules as a list to the extension via App Group |
+| `:platform:android-screening` | `CallScreeningService` and the Android adapters of the platform ports: call screening role, contacts, call log, permissions |
+| `:platform:ios-calldirectory` | iOS adapters of the platform ports (placeholders for now). Planned: export the compatible rules as a list to the Call Directory Extension via App Group |
 | `:platform:fake` | Fake adapters of the platform ports (contacts, role, incoming calls) for the desktop harness and tests |
 | `:app:shared` | Root composable (`App`), bottom navigation, Koin graph; the iOS framework (`Shared`) consumed by `iosApp` |
 | `:app:android` | Android application: `Application` (Koin), `MainActivity`, manifest, release signing |
@@ -217,7 +215,7 @@ Layers from fastest to slowest feedback (see [ADR-0005](adr/0005-desktop-harness
 | Layer | Covers | Feedback |
 |---|---|---|
 | Desktop harness + fakes (Hot Reload) | Screens, navigation, full rule → history → stats flow via the simulator | Seconds |
-| JVM unit, UI and Roborazzi screenshot tests | Engine, normalization, screens, visual regressions; runs in CI | ~1 minute |
+| JVM unit, UI and Roborazzi screenshot tests | Engine, normalization, screens; runs in CI (screenshots are recorded locally) | ~1 minute |
 | Android emulator (on demand, KVM) | Role request, permissions, `CallScreeningService` | Minutes |
 | Physical device | Manufacturer-specific behavior, release checks | Minutes |
 

@@ -1,8 +1,10 @@
 name: CI
 
-# No `push` trigger while the project is under construction: run it by hand (Actions > CI > Run workflow)
-# or through a pull request. Restore `push: branches: [main]` once the app stabilizes.
+# Runs the tests and the quality checks. It builds no app: APKs and the iOS app are built locally, and release builds
+# will get their own workflow.
 on:
+  push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -15,7 +17,7 @@ permissions:
 
 jobs:
   android:
-    name: Android + JVM (build, tests, lint)
+    name: Android + JVM (tests, lint)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -31,9 +33,8 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Build everything, tests, Detekt, ktlint and Android lint
-        # `build` = `check` + assembling every module, which also compiles the shared (common) code on its own.
-        run: ./gradlew build --continue
+      - name: Tests, Detekt, ktlint and Android lint
+        run: ./gradlew check --continue
 
       - name: Verify the exported database schemas are committed and unchanged
         # A changed schema file for an existing version means the database version was not bumped (no migration).
@@ -43,33 +44,6 @@ jobs:
             echo "::error::Room schemas changed. Bump KnoblyDatabase.version, add a migration and commit the new schema (docs/adr/0007-app-updates-and-data-compatibility.md)."
             exit 1
           fi
-
-      - name: Verify the APK does not request the INTERNET permission
-        run: |
-          AAPT2=$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort -V | tail -n 1)
-          APK=app/android/build/outputs/apk/debug/knobly-debug.apk
-          "$AAPT2" dump permissions "$APK"
-          if "$AAPT2" dump permissions "$APK" | grep -q "android.permission.INTERNET"; then
-            echo "::error::The APK requests android.permission.INTERNET (see docs/adr/0003-offline-first-no-internet.md)"
-            exit 1
-          fi
-
-      - name: Record UI screenshots (Roborazzi)
-        run: ./gradlew :app:shared:recordRoborazziJvm
-
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v7
-        with:
-          name: knobly-debug-apk
-          path: app/android/build/outputs/apk/debug/knobly-debug.apk
-          if-no-files-found: error
-
-      - name: Upload UI screenshots
-        uses: actions/upload-artifact@v7
-        with:
-          name: ui-screenshots
-          path: app/shared/build/outputs/roborazzi/
-          if-no-files-found: warn
 
       - name: Upload reports
         if: failure()
@@ -81,7 +55,7 @@ jobs:
             **/build/test-results/
 
   ios:
-    name: iOS (framework, tests, simulator app)
+    name: iOS (shared tests)
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -96,21 +70,6 @@ jobs:
 
       - name: Shared tests on the iOS simulator
         run: ./gradlew iosSimulatorArm64Test --continue
-
-      - name: Build the shared framework for the simulator
-        run: ./gradlew :app:shared:linkDebugFrameworkIosSimulatorArm64
-
-      - name: Build the iOS app for the simulator
-        run: |
-          xcodebuild \
-            -project iosApp/iosApp.xcodeproj \
-            -target iosApp \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            ARCHS=arm64 \
-            ONLY_ACTIVE_ARCH=YES \
-            CODE_SIGNING_ALLOWED=NO \
-            build
 
       - name: Upload reports
         if: failure()

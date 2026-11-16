@@ -245,7 +245,7 @@ Knobly does not need to stay open: Android starts it for each incoming call, als
 | Detekt only | `./gradlew detekt` |
 | iOS tests (macOS only) | `./gradlew iosSimulatorArm64Test` |
 
-Screenshots are also published by CI as the `ui-screenshots` artifact. They are not committed as golden images yet, because font rendering differs between machines.
+Screenshots are recorded locally only. They are not committed as golden images yet, because font rendering differs between machines.
 
 On Linux, Kotlin/Native compiles the iOS sources (klibs) too, so most iOS compile errors show up in `./gradlew check` before reaching the macOS CI job. Linking the framework and running iOS tests still require macOS.
 
@@ -266,7 +266,7 @@ Run the app:
 2. For a physical iPhone, set `TEAM_ID` in `iosApp/Configuration/Config.xcconfig` (not needed for the simulator).
 3. Pick a simulator or device and press *Run*. The *Compile Kotlin Framework* build phase runs `./gradlew :app:shared:embedAndSignAppleFrameworkForXcode`.
 
-Command-line build for the simulator (what CI does):
+Command-line build for the simulator:
 
 ```bash
 xcodebuild -project iosApp/iosApp.xcodeproj -target iosApp -configuration Debug \
@@ -277,10 +277,12 @@ The iOS app is intentionally reduced (see [platforms.md](platforms.md)): there i
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs **manually** (*Actions > CI > Run workflow*) and on pull requests; there is no `push` trigger while the project is under construction.
+`.github/workflows/ci.yml` runs on every push to `main`, on pull requests and manually (*Actions > CI > Run workflow*). It runs tests and quality checks only; it builds no APK or iOS app (build those locally, see above).
 
-- **android** (Ubuntu, full git history for the `versionCode`): `build`; fails if the build changed the committed Room schemas (a schema change without a database version bump); checks that the APK does not request `android.permission.INTERNET`; records screenshots; uploads the `knobly-debug-apk` and `ui-screenshots` artifacts.
-- **ios** (macOS): shared tests on the simulator, the simulator framework and the Xcode app build.
+- **android** (Ubuntu, full git history for the `versionCode`): `./gradlew check` (JVM and Android host tests, UI tests, Detekt, ktlint, Android lint); fails if the build changed the committed Room schemas (a schema change without a database version bump).
+- **ios** (macOS): shared tests on the iOS simulator (`iosSimulatorArm64Test`).
+
+When a job fails, its test and lint reports are uploaded as an artifact (`reports-android`, `reports-ios`).
 
 ## Troubleshooting
 

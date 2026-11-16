@@ -1,5 +1,8 @@
 package app.knobly.app.shared
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,6 +60,12 @@ import kotlin.reflect.KClass
 @Serializable data class RuleEditorRoute(
     val ruleId: String? = null,
 )
+
+/**
+ * Every screen change crossfades for this long (Navigation's own default). The system back (gesture or button) uses
+ * the same crossfade: Navigation's default predictive back transition shrinks the leaving screen to 70% instead.
+ */
+private const val NAV_FADE_MILLIS = 700
 
 /** The bottom navigation tabs. */
 enum class TopLevelDestination(
@@ -132,6 +141,10 @@ private fun MainScaffold(modifier: Modifier = Modifier) {
             navController = navController,
             startDestination = HomeRoute,
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
+            enterTransition = { fadeIn(tween(NAV_FADE_MILLIS)) },
+            exitTransition = { fadeOut(tween(NAV_FADE_MILLIS)) },
+            predictivePopEnterTransition = { fadeIn(tween(NAV_FADE_MILLIS)) },
+            predictivePopExitTransition = { fadeOut(tween(NAV_FADE_MILLIS)) },
         ) {
             composable<HomeRoute> {
                 HomeScreen(

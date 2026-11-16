@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Knobly launcher icon, "Fader k" — same geometry as docs/design/knobly-icon-dark.svg (the chosen mockup).
+<!-- Knobly launcher icon, "Fader k" — same geometry as assets/brand/knobly-icon-dark.svg (the chosen mockup).
      Adaptive icon foreground on a 108dp canvas: the 96-unit design is scaled to 72dp and centered (the visible
      icon area), so the glyph keeps the mockup's proportions and stays inside the 66dp safe zone.
      The handle is drawn like the mockup: an accent disc (r=9) on a ring of the tile color (r=13) over the stem and
