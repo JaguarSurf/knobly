@@ -28,9 +28,6 @@ interface CallHistoryRepository {
     /** Deletes every call; their call log entries are not brought in again. */
     suspend fun clear()
 
-    /** Retention: removes the calls older than [instant]. */
-    suspend fun deleteOlderThan(instant: Instant)
-
     /** Calls screened by Knobly at or after [instant] that are not linked to a call log entry yet, oldest first. */
     suspend fun unlinked(instant: Instant): List<CallRecord>
 

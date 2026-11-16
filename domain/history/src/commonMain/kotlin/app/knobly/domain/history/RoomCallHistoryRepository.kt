@@ -32,10 +32,6 @@ class RoomCallHistoryRepository(
 
     override suspend fun clear() = dao.deleteAll()
 
-    override suspend fun deleteOlderThan(instant: Instant) {
-        dao.deleteOlderThan(instant.toEpochMilliseconds())
-    }
-
     override suspend fun unlinked(instant: Instant): List<CallRecord> =
         dao.unlinked(instant.toEpochMilliseconds()).map { it.toCallRecord() }
 

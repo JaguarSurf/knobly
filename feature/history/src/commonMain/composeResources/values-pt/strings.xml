@@ -30,7 +30,7 @@
     <string name="history_rule_exact">Número exato</string>
     <string name="history_rule_hidden">Número oculto</string>
     <string name="history_rule_regex">Expressão regular %1$s</string>
-    <string name="history_footer">O histórico fica só neste aparelho e é guardado por 3 anos.</string>
+    <string name="history_footer">O histórico fica só neste aparelho e é guardado até você apagá-lo.</string>
     <string name="history_empty_title">Nenhuma chamada ainda</string>
     <string name="history_empty_message">As chamadas recebidas aparecem aqui: atendidas, perdidas e rejeitadas.</string>
     <string name="history_empty_filter">Nenhuma chamada neste filtro.</string>

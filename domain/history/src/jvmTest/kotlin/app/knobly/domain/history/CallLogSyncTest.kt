@@ -13,7 +13,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -22,10 +21,6 @@ import kotlin.time.Instant
 class CallLogSyncTest {
     private val normalizer = LibPhoneNumberNormalizer()
     private val now = Instant.parse("2026-11-14T15:00:00Z")
-    private val clock =
-        object : Clock {
-            override fun now() = now
-        }
 
     private class TestCallLog(
         var entries: List<CallLogEntry>,
@@ -61,7 +56,7 @@ class CallLogSyncTest {
     private suspend fun TestScope.sync(
         history: InMemoryCallHistoryRepository,
         callLog: TestCallLog,
-    ) = CallLogSync(history, callLog, normalizer, clock, StandardTestDispatcher(testScheduler)).sync()
+    ) = CallLogSync(history, callLog, normalizer, StandardTestDispatcher(testScheduler)).sync()
 
     /** Oldest first, for readable assertions. */
     private val InMemoryCallHistoryRepository.byTime get() = value.sortedWith(compareBy({ it.timestamp }, { it.id }))
@@ -190,20 +185,20 @@ class CallLogSyncTest {
         }
 
     @Test
-    fun `calls older than the retention are not brought in`() =
+    fun `old call log entries are brought in too`() =
         runTest {
             val history = InMemoryCallHistoryRepository()
             val callLog =
                 TestCallLog(
                     listOf(
-                        entry("11900000000", now - CallHistoryRecorder.RETENTION - 1.days, CallLogType.MISSED),
-                        entry("11912345678", now - CallHistoryRecorder.RETENTION + 1.days, CallLogType.ANSWERED),
+                        entry("11900000000", now - 3650.days, CallLogType.MISSED),
+                        entry("11912345678", now - 1.days, CallLogType.ANSWERED),
                     ),
                 )
 
             sync(history, callLog)
 
-            assertEquals(listOf("+5511912345678"), history.value.map { it.number?.e164 })
+            assertEquals(listOf("+5511912345678", "+5511900000000"), history.value.map { it.number?.e164 })
         }
 
     @Test

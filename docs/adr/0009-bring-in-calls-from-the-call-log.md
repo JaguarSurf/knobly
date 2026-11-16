@@ -1,6 +1,6 @@
 # ADR-0009: Bring incoming calls from the system call log into the history
 
-- **Status:** accepted
+- **Status:** accepted; retention changed by [ADR-0010](0010-keep-the-call-history-without-a-retention-limit.md) (no limit: the whole call log is read)
 - **Date:** 2026-11-15
 - **Changes:** [ADR-0008](0008-incoming-call-history-and-call-log.md), which read the call log only for the outcome of the calls Knobly screened and rejected mirroring it.
 

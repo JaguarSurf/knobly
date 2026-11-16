@@ -55,7 +55,7 @@ class StatsViewModelTest {
     private fun TestScope.viewModel() =
         StatsViewModel(
             CallStatistics(history, clock) { zone },
-            CallLogSync(history, callLog, { null }, clock, UnconfinedTestDispatcher(testScheduler)),
+            CallLogSync(history, callLog, { null }, UnconfinedTestDispatcher(testScheduler)),
         )
 
     private val callLog = FakeCallLogAccess(granted = false)

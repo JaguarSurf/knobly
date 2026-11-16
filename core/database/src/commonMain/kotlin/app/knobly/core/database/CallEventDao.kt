@@ -68,13 +68,6 @@ interface CallEventDao {
         deleteAllEvents()
     }
 
-    /** Retention: removes the events (and ignored call log entries) older than [timestampUtc] (epoch milliseconds). */
-    @Transaction
-    suspend fun deleteOlderThan(timestampUtc: Long): Int {
-        deleteIgnoredOlderThan(timestampUtc)
-        return deleteEventsOlderThan(timestampUtc)
-    }
-
     @Query(
         "INSERT OR IGNORE INTO ignored_call_log_entries (call_log_key, timestamp_utc) " +
             "SELECT call_log_key, timestamp_utc FROM call_events WHERE id = :id AND call_log_key IS NOT NULL",
@@ -92,10 +85,4 @@ interface CallEventDao {
 
     @Query("DELETE FROM call_events")
     suspend fun deleteAllEvents()
-
-    @Query("DELETE FROM call_events WHERE timestamp_utc < :timestampUtc")
-    suspend fun deleteEventsOlderThan(timestampUtc: Long): Int
-
-    @Query("DELETE FROM ignored_call_log_entries WHERE timestamp_utc < :timestampUtc")
-    suspend fun deleteIgnoredOlderThan(timestampUtc: Long)
 }

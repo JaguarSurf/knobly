@@ -82,7 +82,7 @@ flowchart TD
 | `:core:datastore` | Persisted JSON documents: `DocumentStore`, created by name through a `DocumentStoreFactory` (`call_filters`, `app_settings`) |
 | `:core:designsystem` | Theme, colors, typography, reusable components |
 | `:domain:rules` | Rule engine: evaluation, ordering, caching, rule repository |
-| `:domain:history` | Incoming calls (rejected, answered, missed): repository on the database, recorder (rule snapshot, 3-year retention), `CallLogSync` (links screened calls to the call log for their outcome and brings in the others), `CallLogAccess` port |
+| `:domain:history` | Incoming calls (rejected, answered, missed): repository on the database, recorder (rule snapshot; no retention limit, [ADR-0010](adr/0010-keep-the-call-history-without-a-retention-limit.md)), `CallLogSync` (links screened calls to the call log for their outcome and brings in the others), `CallLogAccess` port |
 | `:domain:settings` | App preferences (`AppSettings`: theme), see [specs/appearance.md](specs/appearance.md) |
 | `:domain:stats` | Statistics of incoming calls: counts per category (answered, missed, rejected) and bucket in the local time zone, rejections per filter, Home summary |
 | `:feature:home` | Control center (the **Início** tab): status of each module and the way into its controls; future modules (messages, notifications) appear here |
@@ -204,11 +204,11 @@ sequenceDiagram
 
 ## Data and statistics
 
-Table `call_events` (every incoming call Knobly screens or brings in from the call log, see [specs/call-history.md](specs/call-history.md) and [ADR-0008](adr/0008-incoming-call-history-and-call-log.md)): `id`, `timestamp_utc` (indexed), `number_raw`, `number_e164`, `number_national`, `action` (`REJECT`/`ALLOW`), `reason`, `matched_rule_id`, a snapshot of the rule (`rule_type`, `rule_value`, `rule_label`) since schema version 2, `outcome` (`answered`/`missed` for allowed calls, from the call log) and, since version 3, `source` (`knobly`/`call_log`) and `call_log_key` (the call log entry, indexed; see [ADR-0009](adr/0009-bring-in-calls-from-the-call-log.md)). Table `ignored_call_log_entries` (`call_log_key`, `timestamp_utc`) remembers the call log entries the user deleted, so they are not brought in again. Retention: 3 years, applied when a call is recorded.
+Table `call_events` (every incoming call Knobly screens or brings in from the call log, see [specs/call-history.md](specs/call-history.md) and [ADR-0008](adr/0008-incoming-call-history-and-call-log.md)): `id`, `timestamp_utc` (indexed), `number_raw`, `number_e164`, `number_national`, `action` (`REJECT`/`ALLOW`), `reason`, `matched_rule_id`, a snapshot of the rule (`rule_type`, `rule_value`, `rule_label`) since schema version 2, `outcome` (`answered`/`missed` for allowed calls, from the call log) and, since version 3, `source` (`knobly`/`call_log`) and `call_log_key` (the call log entry, indexed; see [ADR-0009](adr/0009-bring-in-calls-from-the-call-log.md)). Table `ignored_call_log_entries` (`call_log_key`, `timestamp_utc`) remembers the call log entries the user deleted, so they are not brought in again. No retention limit: calls are kept until the user deletes them ([ADR-0010](adr/0010-keep-the-call-history-without-a-retention-limit.md)).
 
 Each platform module builds the `KnoblyDatabase` (Android: app database path; desktop harness: temp dir; iOS: documents) with `buildKnoblyDatabase()`; UI tests replace the history with `InMemoryCallHistoryRepository`.
 
-Statistics (`:domain:stats`, `CallStatistics`) read the calls of the selected window and aggregate them in memory, in the local time zone (hour, day, week, month and year buckets; see [specs/call-statistics.md](specs/call-statistics.md)). Three years of rejected calls are a few thousand rows, so SQL aggregation is not needed; if the volume grows, a pre-aggregated table can be added.
+Statistics (`:domain:stats`, `CallStatistics`) read the calls of the selected window and aggregate them in memory, in the local time zone (hour, day, week, month and year buckets; see [specs/call-statistics.md](specs/call-statistics.md)). Years of calls are a few thousand rows, so SQL aggregation is not needed; if the volume grows, a pre-aggregated table can be added.
 
 ## Testing strategy
 
@@ -226,7 +226,7 @@ Layers from fastest to slowest feedback (see [ADR-0005](adr/0005-desktop-harness
 **Android**
 - The system wakes up the `CallScreeningService` on every call: **no foreground service** and no battery optimization exemption.
 - Requires the `ROLE_CALL_SCREENING` role (API 29+), requested from the "Enable call filtering" card in the Filters tab via `RoleManager`. It does not replace the default dialer: the system phone app keeps handling calls.
-- WorkManager for maintenance, if ever needed: pre-aggregation for statistics. History retention does not need it (old entries are pruned when a call is recorded).
+- WorkManager for maintenance, if ever needed: pre-aggregation for statistics. The history has no retention limit, so it needs no pruning job.
 
 **iOS**
 - The app writes the list to the App Group and calls `CXCallDirectoryManager.reloadExtension`.

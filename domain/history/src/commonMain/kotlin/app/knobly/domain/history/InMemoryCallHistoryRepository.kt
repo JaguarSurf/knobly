@@ -44,11 +44,6 @@ class InMemoryCallHistoryRepository(
             emptyList()
         }
 
-    override suspend fun deleteOlderThan(instant: Instant) {
-        ignored.entries.removeAll { it.value < instant }
-        state.update { calls -> calls.filter { it.timestamp >= instant } }
-    }
-
     override suspend fun unlinked(instant: Instant): List<CallRecord> =
         state.value
             .filter { it.source == CallSource.KNOBLY && it.callLogKey == null && it.timestamp >= instant }

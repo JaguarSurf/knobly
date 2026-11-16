@@ -11,9 +11,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 /**
  * Keeps the history in step with the system call log (docs/specs/call-history.md, ADR-0009). Each call log entry the
@@ -23,16 +23,14 @@ import kotlin.time.Duration.Companion.minutes
  * - **brought in** as a new call ([CallSource.CALL_LOG]) when Knobly did not screen it: before Knobly was installed,
  *   while it did not hold the call screening role, or blocked by the system or another app.
  *
- * Entries the user removed from the history are not brought in again, and neither are those older than the
- * retention. Runs when the app shows calls and after each screened call; does nothing without the permission.
+ * Entries the user removed from the history are not brought in again. Runs when the app shows calls and after each
+ * screened call; does nothing without the permission.
  */
 class CallLogSync(
     private val history: CallHistoryRepository,
     private val callLog: CallLogAccess,
     private val normalizer: PhoneNumberNormalizer,
-    private val clock: Clock,
     private val dispatcher: CoroutineDispatcher,
-    private val retention: Duration = CallHistoryRecorder.RETENTION,
 ) {
     private val mutex = Mutex()
 
@@ -53,9 +51,9 @@ class CallLogSync(
     suspend fun sync() {
         if (!callLog.isGranted.value) return
         mutex.withLock {
-            val since = clock.now() - retention
-            val entries = withContext(dispatcher) { callLog.incomingCalls(since) }
-            val known = if (entries.isEmpty()) emptySet() else history.knownCallLogKeys(since)
+            // No retention limit: the whole call log (Android keeps a few hundred to a few thousand entries).
+            val entries = withContext(dispatcher) { callLog.incomingCalls(ALL_TIME) }
+            val known = if (entries.isEmpty()) emptySet() else history.knownCallLogKeys(ALL_TIME)
             val fresh = entries.filter { it.key !in known }.distinctBy { it.key }.sortedBy { it.timestamp }
             if (fresh.isNotEmpty()) linkOrBringIn(fresh)
         }
@@ -129,5 +127,8 @@ class CallLogSync(
     companion object {
         /** A call log entry starts when the phone starts ringing, a moment after Knobly screened it. */
         val MATCH_WINDOW: Duration = 2.minutes
+
+        /** The start of the history: there is no retention limit, so the whole call log is read. */
+        private val ALL_TIME: Instant = Instant.fromEpochMilliseconds(0)
     }
 }

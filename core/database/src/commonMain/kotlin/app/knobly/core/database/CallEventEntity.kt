@@ -45,11 +45,11 @@ data class CallEventEntity(
 
 /**
  * A call log entry the user removed from the history (one entry, or the whole history): it is not brought in again.
- * Pruned with the history's retention. Since v3.
+ * Since v3.
  */
 @Entity(tableName = "ignored_call_log_entries")
 data class IgnoredCallLogEntryEntity(
     @PrimaryKey @ColumnInfo(name = "call_log_key") val callLogKey: String,
-    /** Epoch milliseconds (UTC) of the call, for the retention. */
+    /** Epoch milliseconds (UTC) of the call. */
     @ColumnInfo(name = "timestamp_utc") val timestampUtc: Long,
 )

@@ -1,7 +1,7 @@
 # Spec: call history (History tab)
 
 - **Status:** implemented on Android (iOS: see [platforms.md](../platforms.md))
-- **Date:** 2026-11-14 (calls from the call log: 2026-11-15)
+- **Date:** 2026-11-14 (calls from the call log: 2026-11-15; no retention limit: 2026-11-16)
 
 ## Goal
 
@@ -18,7 +18,7 @@ Show the user every incoming call and how it ended: **answered**, **missed** or 
   | Missed | Rang and was not answered: missed, declined or sent to voicemail | "Perdida" |
   | Received | Rang; how it ended is not known (no call log access, or not in the call log yet) | "Recebida" |
 
-- **The system call log is synced** (`READ_CALL_LOG`, optional): after each screened call, when History or Statistics open and right after the permission is granted. Each incoming call log entry of the last 3 years that the history does not know yet is:
+- **The system call log is synced** (`READ_CALL_LOG`, optional): after each screened call, when History or Statistics open and right after the permission is granted. Each incoming call log entry that the history does not know yet (the whole call log) is:
   - **matched** with the call Knobly screened (same number, with the [matching rules](phone-number-matching.md), started within 2 minutes; a blocked entry with a rejected call, an answered or missed one with a call that rang): a call that rang becomes **answered** or **missed**;
   - otherwise **brought in** as a new entry: calls from before Knobly was installed, from while it did not hold the call screening role, and calls **blocked by the system or another app** ("Rejeitada · Bloqueada pelo sistema").
 - Entries are recognized by start time and number, so syncing again never duplicates them. Entries the user deleted (one, or the whole history) are not brought in again. The system call log is only read, never changed.
@@ -30,7 +30,7 @@ Show the user every incoming call and how it ended: **answered**, **missed** or 
 ## Retention and privacy
 
 - Kept **only on the device** (Room database `knobly.db`), like everything else in Knobly. No backup or export yet.
-- Entries older than **3 years** are deleted automatically whenever a new call is recorded (and older call log entries are not brought in). Three years feed the yearly statistics ([call-statistics.md](call-statistics.md)).
+- **No retention limit:** calls are kept until the user deletes them; nothing is deleted automatically ([ADR-0010](../adr/0010-keep-the-call-history-without-a-retention-limit.md)). Every year feeds the yearly statistics ([call-statistics.md](call-statistics.md)).
 - The user can delete one entry or **clear the whole history** (with a confirmation). Deleted calls are not brought in again from the call log.
 
 ## History tab
@@ -44,7 +44,7 @@ Follows the approved mockup:
 - Numbers are formatted for display: national format for Brazilian numbers (`(11) 91234-5678`, `0303 123 4567`, also `0304 765 4321`, which libphonenumber does not accept as valid), international format for other countries.
 - Tapping an entry opens a **details sheet**: name or number, full date and time, status (outcome and, for rejections, the reason; "Do registro de chamadas do aparelho" for calls brought in from the call log), **Copiar número** (not for hidden numbers) and **Excluir registro**.
 - Empty states: no calls yet; no calls for the selected filter.
-- Footer: "O histórico fica só neste aparelho e é guardado por 3 anos."
+- Footer: "O histórico fica só neste aparelho e é guardado até você apagá-lo."
 
 ## Out of scope (for now)
 

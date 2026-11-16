@@ -1,6 +1,6 @@
 # ADR-0008: Record every incoming call, and read the call log (optional) for outcomes
 
-- **Status:** accepted; partly changed by [ADR-0009](0009-bring-in-calls-from-the-call-log.md) (the call log is now also used to bring in the calls Knobly did not screen)
+- **Status:** accepted; partly changed by [ADR-0009](0009-bring-in-calls-from-the-call-log.md) (the call log is now also used to bring in the calls Knobly did not screen) and by [ADR-0010](0010-keep-the-call-history-without-a-retention-limit.md) (no retention limit)
 - **Date:** 2026-11-14
 - **Changes:** [platforms.md](../platforms.md), which said Knobly would not use `READ_CALL_LOG`.
 

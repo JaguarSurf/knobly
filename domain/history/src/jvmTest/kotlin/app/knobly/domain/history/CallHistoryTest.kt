@@ -26,7 +26,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -38,14 +37,10 @@ class CallHistoryTest {
     private val history = RoomCallHistoryRepository(database.callEvents())
     private val normalizer = LibPhoneNumberNormalizer()
     private val now = Instant.parse("2026-11-14T15:00:00Z")
-    private val clock =
-        object : Clock {
-            override fun now() = now
-        }
     private val telemarketing = CustomRule("tm", CustomRuleType.PREFIX, "0303", "Telemarketing")
     private val settings =
         CallFilterSettings(contactsOnly = true, customRulesEnabled = true, customRules = listOf(telemarketing))
-    private val recorder = CallHistoryRecorder(history, flowOf(settings), clock)
+    private val recorder = CallHistoryRecorder(history, flowOf(settings))
 
     @AfterTest
     fun tearDown() = database.close()
@@ -125,7 +120,7 @@ class CallHistoryTest {
                     CallLogEntry("03031234567", now - 2.days, CallLogType.BLOCKED),
                     CallLogEntry("21987654321", now - 3.days, CallLogType.MISSED),
                 )
-            val sync = CallLogSync(history, callLog, normalizer, clock, StandardTestDispatcher(testScheduler))
+            val sync = CallLogSync(history, callLog, normalizer, StandardTestDispatcher(testScheduler))
 
             sync.sync()
             sync.sync()
@@ -148,10 +143,6 @@ class CallHistoryTest {
             history.clear()
             sync.sync()
             assertTrue(history.calls.first().isEmpty())
-
-            // The retention also forgets the removed entries.
-            history.deleteOlderThan(now + 1.days)
-            assertTrue(history.knownCallLogKeys(now - 4.days).isEmpty())
         }
 
     @Test
@@ -200,13 +191,16 @@ class CallHistoryTest {
         }
 
     @Test
-    fun `calls older than three years are removed when a new one is recorded`() =
+    fun `old calls are kept when a new one is recorded`() =
         runTest {
-            recorder.record(call("0303 111 1111", now - 1097.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
-            recorder.record(call("0303 222 2222", now - 1095.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
+            recorder.record(call("0303 111 1111", now - 3650.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
+            recorder.record(call("0303 222 2222", now - 1097.days), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
             recorder.record(call("0303 333 3333"), rejectedBy(CallFilterRuleIds.CONTACTS_ONLY))
 
-            assertEquals(listOf("03033333333", "03032222222"), history.calls.first().map { it.number?.raw })
+            assertEquals(
+                listOf("03033333333", "03032222222", "03031111111"),
+                history.calls.first().map { it.number?.raw },
+            )
         }
 
     @Test

@@ -30,7 +30,7 @@
     <string name="history_rule_exact">Exact number</string>
     <string name="history_rule_hidden">Hidden number</string>
     <string name="history_rule_regex">Regular expression %1$s</string>
-    <string name="history_footer">History stays on this device only and is kept for 3 years.</string>
+    <string name="history_footer">History stays on this device only and is kept until you delete it.</string>
     <string name="history_empty_title">No calls yet</string>
     <string name="history_empty_message">Incoming calls show up here: answered, missed and rejected.</string>
     <string name="history_empty_filter">No calls for this filter.</string>

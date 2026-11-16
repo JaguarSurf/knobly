@@ -63,13 +63,12 @@ val sharedModule: Module =
             )
         }
         single<CallHistoryRepository> { RoomCallHistoryRepository(get<KnoblyDatabase>().callEvents()) }
-        single { CallHistoryRecorder(get(), get<CallFilterSettingsRepository>().settings, get()) }
+        single { CallHistoryRecorder(get(), get<CallFilterSettingsRepository>().settings) }
         single {
             CallLogSync(
                 history = get(),
                 callLog = get(),
                 normalizer = get(),
-                clock = get(),
                 dispatcher = getOrNull<CoroutineDispatcher>(named(SCREENING_DISPATCHER)) ?: Dispatchers.Default,
             )
         }

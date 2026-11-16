@@ -9,7 +9,7 @@ Show how many calls the phone received over time, how they ended (answered, miss
 
 ## Data
 
-- Computed from the call history ([call-history.md](call-history.md)), which keeps every incoming call Knobly screened for **3 years**. Nothing else is stored.
+- Computed from the call history ([call-history.md](call-history.md)), which keeps every incoming call until the user deletes it. Nothing else is stored.
 - Aggregated in the phone's **local time zone** (days, weeks and daylight saving time follow the phone's clock). A call at 23:30 local time counts on that day, even if it is already the next day in UTC.
 - Updated live: a call screened while the tab is open shows up immediately.
 
@@ -27,7 +27,7 @@ Follows the approved mockup:
   | Mês | last 12 months | 12 months | `Jan`, `Fev`… |
   | Ano | last 5 years | 5 years | `2026` |
 
-  With 3 years of history, the oldest years of the **Ano** view are empty.
+  Years before the oldest call in the history are empty in the **Ano** view.
 - Category chips: **Todas** (default: every incoming call), **Atendidas**, **Perdidas** and **Rejeitadas**. They switch the total and the chart.
 - **Total** of the selected category in the window ("42 chamadas nas últimas 8 semanas", "3 perdidas nas últimas 24 horas") and a smooth line chart with one point per bucket. Labels that would overlap are skipped at a regular step, always keeping the current bucket. Screen readers get the total and the period.
 - When some calls only "rang" (outcome unknown) and the call log cannot be read, a card offers the permission, as in History. Calls brought in from the call log ([call-history.md](call-history.md)) count like the others.
@@ -44,5 +44,5 @@ As in the Home mockup:
 
 ## Implementation notes
 
-- `:domain:stats` (`CallStatistics`) aggregates in memory: three years of rejected calls are a few thousand rows at most, and doing it in Kotlin keeps time zone handling correct and testable. A pre-aggregated table can come later if needed.
+- `:domain:stats` (`CallStatistics`) aggregates in memory: years of calls are a few thousand rows, and doing it in Kotlin keeps time zone handling correct and testable. A pre-aggregated table can come later if needed.
 - The chart is a Compose Canvas component of the design system (`KnoblyLineChart`), not a chart library.

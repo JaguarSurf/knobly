@@ -94,7 +94,7 @@ class HistoryViewModelTest {
         return HistoryViewModel(
             history = history,
             contacts = ContactDirectory(contacts, normalizer, backgroundScope, dispatcher),
-            callLog = CallLogSync(history, callLog, normalizer, clock, dispatcher),
+            callLog = CallLogSync(history, callLog, normalizer, dispatcher),
             normalizer = normalizer,
             clock = clock,
             timeZone = timeZone,
